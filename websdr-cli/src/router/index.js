@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Hello from '@/components/Hello'
-import Waterfall from '@/components/Waterfall'
+import Home from '@/components/home/Home'
+import Waterfall from '@/components/waterfall/Waterfall'
 
 Vue.use(Router)
 
@@ -9,14 +9,13 @@ export default new Router({
   routes: [
     {
       path: '/',
-      name: 'Hello',
-      component: Hello
+      name: 'Home',
+      component: Home
     },
     {
-      path: '/waterfall',
+      path: '/spectrum',
       name: 'Waterfall',
       component: Waterfall
     }
-
   ]
 })
