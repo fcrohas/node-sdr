@@ -7,11 +7,13 @@
   },
   "dependencies": {
     "body-parser": "~1.17.1",
+    "config-node": "^1.3.0",
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.3",
     "express": "~4.15.2",
     "jade": "~1.11.0",
     "morgan": "~1.8.1",
+    "sdrjs": "0.0.6",
     "serve-favicon": "~2.4.2",
     "socket.io": "^2.0.3"
   }

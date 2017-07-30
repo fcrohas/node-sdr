@@ -13,7 +13,7 @@ export default new Router({
       component: Home
     },
     {
-      path: '/spectrum',
+      path: '/spectrum/:serialNumber',
       name: 'Waterfall',
       component: Waterfall
     }

@@ -4,22 +4,28 @@
  * Module dependencies.
  */
 
-var app = require('../app');
+var main = require('../app');
 var debug = require('debug')('node-sdr:server');
 var http = require('http');
-
+var io = require('socket.io');
 /**
  * Get port from environment and store in Express.
  */
 
 var port = normalizePort(process.env.PORT || '3000');
-app.set('port', port);
+main.app.set('port', port);
 
 /**
  * Create HTTP server.
  */
 
-var server = http.createServer(app);
+var server = http.createServer(main.app);
+
+/**
+ * Listen websocket on same port
+ */
+var websocket = io.listen(server);
+main.setWebsocket(websocket);
 
 /**
  * Listen on provided port, on all network interfaces.

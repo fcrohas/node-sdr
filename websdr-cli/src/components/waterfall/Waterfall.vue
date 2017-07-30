@@ -1,40 +1,44 @@
 <template>
-  <md-layout md-row md-flex>
-    <md-layout md-column>
-      <md-layout md-flex></md-layout>
-      <md-layout md-flex>
-      <md-whiteframe md-elevation="2">
-        <md-card>
-          <md-card-header>
-            <div class="md-title">Title goes here</div>
-            <div class="md-subhead">Subtitle here</div>
-          </md-card-header>
-          <md-card-content>
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Optio itaque ea, nostrum odio. Dolores, sed accusantium quasi non, voluptas eius illo quas, saepe voluptate pariatur in deleniti minus sint. Excepturi.
-          </md-card-content>
-        </md-card>
-        </md-whiteframe>
-      </md-layout>
-    </md-layout>
-    <md-layout md-column md-gutter>
-      <md-layout md-flex="20"></md-layout>
-      <md-layout>
-      </md-layout>
-    </md-layout>
-
-    <md-layout md-column md-gutter>
-      <md-layout md-flex="50"></md-layout>
-      <md-layout></md-layout>
-      <md-layout></md-layout>
-    </md-layout>
-  </md-layout>  
+  <div>
+    <canvas></canvas>
+    <md-button @click="disconnect()" class="md-raised">Close</md-button>
+  </div>
 </template>
 
 <script>
+import Websocket from '../../service/websocket'
+import Service from '../../service/api'
+
 export default {
   name: 'waterfall',
+  props: ['serialNumber'],
   data () {
     return {
+      serialNumber: ''
+    }
+  },
+  methods: {
+    disconnect: function () {
+      // Close websocket
+      Websocket.close()
+      // close device
+      Service.get('/devices/close/' + this.serialNumber).then(response => {
+        this.$router.push({path: '/'})
+      })
+    }
+  },
+  watch: {
+    serialNumber: function (serial) {
+      Websocket.connect(serial)
+    }
+  },
+  mounted () {
+    if (this.$route.params != null) {
+      this.serialNumber = this.$route.params.serialNumber
+      // Connect to socket serial number
+      Websocket.connect(this.$route.params.serialNumber)
+      // listen event
+      Websocket.send('start')
     }
   }
 }

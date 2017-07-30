@@ -2,7 +2,7 @@
   <div id="app">
     <md-toolbar class="md-medium">
       <div class="md-toolbar-container">
-        <md-button class="md-icon-button" @click="$refs.mainmenu.toggle()">
+        <md-button class="md-icon-button" @click="displayMenu=!displayMenu">
           <md-icon>menu</md-icon>
         </md-button>
 
@@ -17,7 +17,7 @@
         </md-button>
       </div>
     </md-toolbar>
-    <main-menu ref="mainmenu"></main-menu>
+    <main-menu :display="displayMenu"></main-menu>
     <router-view></router-view>
   </div>
 </template>
@@ -25,9 +25,19 @@
 <script>
 import MainMenu from '@/components/mainmenu/MainMenu'
 export default {
+  props: {
+  },
+  data () {
+    return {
+      displayMenu: false
+    }
+  },
   name: 'app',
   components: { MainMenu },
   methods: {
+  },
+  ready () {
+
   }
 }
 </script>

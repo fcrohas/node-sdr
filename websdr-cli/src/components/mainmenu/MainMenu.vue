@@ -18,14 +18,21 @@
 
 <script>
 export default {
-  props: [],
+  props: {
+    display: {
+      type: Boolean,
+      default: false
+    }
+  },
   data () {
     return {
 
     }
   },
   methods: {
-    toggle: function () {
+  },
+  watch: {
+    display () {
       this.$refs.menu.toggle()
     }
   },
