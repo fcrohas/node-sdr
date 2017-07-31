@@ -4,53 +4,43 @@ class DevicesManager {
 	  this.rtlsdr = null;
 	  this.sdrplay = null;
 	  this.devices = [];
+	  this.driver_holder = [];
 	}
 
 	loadDrivers() {
-	  // Try to load sdrjs driver
-	  try {
-	    this.rtlsdr = require('sdrjs');
-	  } catch(e) {
-            console.log('Unable to load rtlsdr driver.');
-	  }
-	  // try to load sdrplay driver
-	  try {
-	    this.sdrplay = require('node-sdrplay');
-	  } catch(e) {
-            console.log('Unable to load sdrplay driver.');
-	  }
+		var fs = require('fs');
+		var path_module = require('path');
+		var path = path_module.join(__dirname, 'drivers');
+		console.log('Loading drivers from ' + path + ' ...');
+        var files = fs.readdirSync(path);
+        for (var i = 0; i < files.length; i++) {
+        	console.log('Loading drivers ' + files[i] + ' ...');	  
+            var f = path_module.join(path, files[i]);
+	        this.driver_holder.push(require(f));
+        }
+        // 
+	    console.log(files.length + ' driver(s) loaded.');
 	}
 
 	getDevices() {
 		// reset
-		this.devices = [];
+		this.devices = {};
 		// devices type rtlsdr
-		if (this.rtlsdr != null) {
-		  const rtldevices = rtlsdr.getDevices();
-		  for (var i = 0; i < rtldevices.length; i++) {
-	   	    var device = rtldevices[i];
-	            this.devices[device.serialNumber] = { 
-			    type : 'rtlsdr', 
-			    device : device, 
-			    name : device.manufacturer + ' ' + device.productName + ' ' +device.deviceName,
-			    serial : device.serialNumber
-		    }
-		  }
-
+		if (this.driver_holder.length > 0 ) {
+			for (var i=0; i< this.driver_holder.length; i++) {
+				var driver = this.driver_holder[i];
+				var devicesDriver = null;
+				try {
+					devicesDriver = driver.getDevices();
+					console.log('Found ' + Object.keys(devicesDriver).length + ' device(s) with NodeJS driver ' + driver.getDriverName());
+					// Merge with previous driver result
+					Object.assign(this.devices, devicesDriver);
+				} catch(e) {
+					console.log("Unable to load " + driver.getDriverName() + " NodeJS driver. Error : " + e);
+				}
+			}
 		}
-		// device type sdrplay
-		if (this.sdrplay != null) {
-		  const sdrplaydevices = sdrplay.GetDevices(4);
-		  for ( var i = 0; i < sdrplaydevices.length; i++) {
-		    var device = sdrplaydevices[i];
-		    this.devices[device.SerNo] = {
-			    type : 'sdrplay',
-			    device : device,
-			    name : device.hwVer,
-			    serial : device.SerNo
-		    }
-		  }
-		}
+		return this.devices;
 	}
 
 	getDevice(serial) {

@@ -3,7 +3,6 @@ var rtlsdr = require('sdrjs');
 var fs = require('fs');
 var router = express.Router();
 var devices = [];
-var devicesManager = null;
 var node_config = process.env.NODE_ENV || 'development';
 var config = require('config-node')();
 
@@ -26,25 +25,27 @@ var socketRouter = {
 
 /* GET users listing. */
 router.get('/list', function(req, res, next) {
-  devices = devicesManager.getDevices();
-  var response = { count : devices.length, devices : []};
-  for (var i = 0; i < devices.length; i++) {
-  	response.devices.push({deviceName : devices[i].name,
-  				serialNumber : devices[i].serial});
+  devices = socketRouter.devicesManager.getDevices();
+  var serials = Object.keys(devices);
+  var response = { count : serials.length, devices : []};
+  for (var i = 0; i < serials.length; i++) {
+  	var serial = serials[i];
+  	response.devices.push({ deviceName : devices[serial].getName(),
+  						    serialNumber : devices[serial].getSerial()});
   }
   res.send(response);
 });
 
 router.post('/save', function(req, res, next) {
 	const devicesToSave = req.body.devices.map( serial => {
-		return devices[serial];
+		return { deviceName : devices[serial].getName(), serialNumber : devices[serial].getSerial(), type : devices[serial].getType()}; 
 	});
 	fs.writeFile('config/'+node_config+'.json', JSON.stringify(devicesToSave), function (err) {
 	  if (err) return res.status(500).send(err);
 	  res.status(200).send();
 	});
 	// reload config
-	config = require('config-node')();	
+	config = require('config-node')();
 });
 
 router.get('/config', function(req, res, next) {
@@ -53,7 +54,7 @@ router.get('/config', function(req, res, next) {
 
 router.get('/open/:serialNumber', function(req, res, next) {
 	if (devices.length == 0) {
-		devices = devicesManager.getDevices();
+		devices = socketRouter.devicesManager.getDevices();
 	}
 	// Only one by serial number
 	if (devices[req.params.serialNumber] != null) {
@@ -61,7 +62,7 @@ router.get('/open/:serialNumber', function(req, res, next) {
 		// Open then start
 		device.open();
 		// start here
-		const deviceChannel = socketRouter.websocket.of('/socket/device/' + device[0].serialNumber);
+		const deviceChannel = socketRouter.websocket.of('/socket/device/' + device.getSerial());
 		deviceChannel.on('connection', (socket) => {
 			// Message listener
 			socket.on('start', (message) => {
@@ -72,12 +73,11 @@ router.get('/open/:serialNumber', function(req, res, next) {
 			socket.on('stop', (message) => {
 				console.log('stop *** ' + message);
 				device.stop();
-				socket.disconnect(0);
 			});
+
 			// disconnect listener
 			socket.on('disconnect', function() {
 				console.log('disconnect *** ');
-				deviceChannel.close();
 			});
 		});
 	}

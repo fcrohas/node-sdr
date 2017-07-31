@@ -12,7 +12,7 @@
 
                 <md-card-area>
                   <md-card-header>
-                    <div class="md-title">{{device.manufacturer}} {{device.productName}}</div>
+                    <div class="md-title">{{device.deviceName}}</div>
                     <div class="md-subhead">{{device.serialNumber}}</div>
                   </md-card-header>
 

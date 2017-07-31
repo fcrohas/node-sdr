@@ -1,1 +1,1 @@
-[{"type":"rtlsdr","deviceName":"Generic RTL2832U","productName":"RTL2832U","manufacturer":"Generic","serialNumber":"77771111153705700"}]
+[{"deviceName":"Realtek RTL2838UHIDIR Generic RTL2832U OEM","serialNumber":"00000001","type":"rtlsdr"},{"deviceName":"SDRPlay RSP2","serialNumber":"170107AC00","type":"sdrplay"}]

@@ -10,6 +10,9 @@ var users = require('./routes/users');
 var devices = require('./routes/devices');
 /* Services */
 var devicesManager = require('./services/devices-manager');
+/* Load available drivers */
+devicesManager.loadDrivers();
+/* Add devices manager to route api devices */
 devices.setDevicesManager(devicesManager);
 /* Main application */
 var app = express();
