@@ -51,6 +51,7 @@ class DevicesManager {
 		    }
 		  }
 		}
+		return this.devices;
 	}
 
 	getDevice(serial) {

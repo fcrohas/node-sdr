@@ -1,5 +1,4 @@
 var express = require('express');
-var rtlsdr = require('sdrjs');
 var fs = require('fs');
 var router = express.Router();
 var devices = [];
