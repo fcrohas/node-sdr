@@ -3,6 +3,7 @@ var rtlsdr = require('sdrjs');
 var fs = require('fs');
 var router = express.Router();
 var devices = [];
+var devicesManager = null;
 var node_config = process.env.NODE_ENV || 'development';
 var config = require('config-node')();
 
@@ -17,33 +18,26 @@ var socketRouter = {
 		}
 		
 	},
+	setDevicesManager : function(devicesManager) {
+		this.devicesManager = devicesManager;
+	},
 	onSocketRegistered : null
 };
 
 /* GET users listing. */
 router.get('/list', function(req, res, next) {
-  const rtldevices = rtlsdr.getDevices();
-  var response = { count : rtldevices.length, devices : []};
-  for (var i = 0; i < rtldevices.length; i++) {
-  	devices.push(rtldevices[i]);
-  	response.devices.push({deviceName : rtldevices[i].deviceName, 
-  							productName : rtldevices[i].productName,
-  							manufacturer : rtldevices[i].manufacturer,
-  							serialNumber : rtldevices[i].serialNumber});
+  devices = devicesManager.getDevices();
+  var response = { count : devices.length, devices : []};
+  for (var i = 0; i < devices.length; i++) {
+  	response.devices.push({deviceName : devices[i].name,
+  				serialNumber : devices[i].serial});
   }
   res.send(response);
 });
 
 router.post('/save', function(req, res, next) {
-	const devicesSerial = req.body.devices.join(',');
-	const devicesToSave = devices.map(device => {
-		if (devicesSerial.indexOf(device.serialNumber) != -1) {
-			return {type: 'rtlsdr',
-					deviceName : device.deviceName, 
-  					productName : device.productName,
-  					manufacturer : device.manufacturer,
-  					serialNumber : device.serialNumber};
-		}
+	const devicesToSave = req.body.devices.map( serial => {
+		return devices[serial];
 	});
 	fs.writeFile('config/'+node_config+'.json', JSON.stringify(devicesToSave), function (err) {
 	  if (err) return res.status(500).send(err);
@@ -59,26 +53,31 @@ router.get('/config', function(req, res, next) {
 
 router.get('/open/:serialNumber', function(req, res, next) {
 	if (devices.length == 0) {
-		devices = rtlsdr.getDevices();
+		devices = devicesManager.getDevices();
 	}
-	const device = devices.filter(device => {
-		if (device.serialNumber == req.params.serialNumber) {
-			return device;
-		}
-	});
 	// Only one by serial number
-	if (device.length == 1) {
-		device[0].open();
+	if (devices[req.params.serialNumber] != null) {
+		const device = devices[req.params.serialNumber];
+		// Open then start
+		device.open();
+		// start here
 		const deviceChannel = socketRouter.websocket.of('/socket/device/' + device[0].serialNumber);
 		deviceChannel.on('connection', (socket) => {
-			device[0].start();
 			// Message listener
-			socket.on('message', (message) => {
-				console.log('received *** ' + message);
+			socket.on('start', (message) => {
+				console.log('start *** ' + message);
+				device.start();
+			});
+
+			socket.on('stop', (message) => {
+				console.log('stop *** ' + message);
+				device.stop();
+				socket.disconnect(0);
 			});
 			// disconnect listener
 			socket.on('disconnect', function() {
-				device[0].stop();
+				console.log('disconnect *** ');
+				deviceChannel.close();
 			});
 		});
 	}
@@ -86,16 +85,12 @@ router.get('/open/:serialNumber', function(req, res, next) {
 });
 
 router.get('/close/:serialNumber', function(req, res, next) {
-	const device = devices.filter(device => {
-		if (device.serialNumber == req.params.serialNumber) {
-			return device;
-		}
-	});
-	// Only one by serial number
-	if (device.length == 1) {
-		device[0].close();
+	if (devices[req.params.serialNumber] != null) {
+		const device = devices[req.params.serialNumber];
+		// Only one by serial number
+		device.close();
+		res.status(200).send();
 	}
-	res.status(200).send();
 });
 
 module.exports = socketRouter;

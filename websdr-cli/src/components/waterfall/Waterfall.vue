@@ -20,7 +20,9 @@ export default {
   methods: {
     disconnect: function () {
       // Close websocket
-      Websocket.close()
+      Websocket.emit('stop', 'test', function () {
+        Websocket.close()
+      })
       // close device
       Service.get('/devices/close/' + this.serialNumber).then(response => {
         this.$router.push({path: '/'})
@@ -38,7 +40,8 @@ export default {
       // Connect to socket serial number
       Websocket.connect(this.$route.params.serialNumber)
       // listen event
-      Websocket.send('start')
+      Websocket.emit('start', 'test', function () {
+      })
     }
   }
 }

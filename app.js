@@ -4,11 +4,14 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-
+/* Routes */
 var index = require('./routes/index');
 var users = require('./routes/users');
 var devices = require('./routes/devices');
-
+/* Services */
+var devicesManager = require('./services/devices-manager');
+devices.setDevicesManager(devicesManager);
+/* Main application */
 var app = express();
 
 /* Main application wrapper object */

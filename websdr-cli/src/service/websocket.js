@@ -1,13 +1,14 @@
 import Socket from 'socket.io-client/dist/socket.io'
-var instance = null
 
 class Websocket {
 
+  static instance = null
+
   static getInstance () {
-    if (instance == null) {
-      instance = new Websocket()
+    if (Websocket.instance == null) {
+      Websocket.instance = new Websocket()
     }
-    return instance
+    return Websocket.instance
   }
 
   constructor () {
@@ -15,7 +16,7 @@ class Websocket {
   }
 
   connect (serial) {
-    this.socket = Socket.connect('http://localhost:3000/socket/device/' + serial)
+    this.socket = Socket.connect('http://192.168.0.49:3000/socket/device/' + serial)
   }
 
   send (message, ack) {
@@ -37,6 +38,7 @@ class Websocket {
   close () {
     if (this.socket != null) {
       this.socket.close()
+      this.socket = null
     }
   }
 
@@ -47,4 +49,4 @@ class Websocket {
   }
 }
 
-export default Websocket.getInstance()
+export default new Websocket()
