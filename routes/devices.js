@@ -67,16 +67,25 @@ router.get('/open/:serialNumber', function(req, res, next) {
 			socket.on('start', (message) => {
 				console.log('start *** ' + message);
 				device.start();
+				device.listen(function(data) {
+					socket.emit('fft',data);
+				});
 			});
 
 			socket.on('stop', (message) => {
 				console.log('stop *** ' + message);
 				device.stop();
+				if (message == 'disconnect') {
+					console.log('disconnect client connection');
+					socket.disconnect(0);	
+				}
+				
 			});
 
 			// disconnect listener
 			socket.on('disconnect', function() {
 				console.log('disconnect *** ');
+				socket.disconnect(0);	
 			});
 		});
 	}

@@ -1,5 +1,7 @@
 <template>
-    <div>
+  <md-layout class="spacing">
+    <md-layout md-hide-medium></md-layout>
+    <md-layout>
     	<md-stepper md-alternate-labels @completed="onSave()">
     	  <md-step md-label="Plugin device" md-icon="usb" :md-continue="devicesDetected">
     	  <md-layout md-align="center" md-gutter="16">
@@ -34,7 +36,9 @@
             <span>{{errors.join('.')}}</span>
             <md-button class="md-accent" md-theme="light-blue" @click="clearErrors()">Retry</md-button>
         </md-snackbar>    
-    </div>
+      </md-layout>
+      <md-layout md-hide-medium></md-layout>
+    </md-layout>
 </template>
 
 <script>
@@ -100,6 +104,9 @@ export default {
 </script>
 
 <style lang="css" scoped>
+.spacing {
+  padding: 10px;
+}
 .green {
 	color: green;
 }

@@ -27,7 +27,6 @@ class RTLSDRDevice extends Device {
 	}
 
 	getName() {
-		console.log(this.device.manufacturer + ' ' + this.device.productName + ' ' + this.device.deviceName);
 		return this.device.manufacturer + ' ' + this.device.productName + ' ' + this.device.deviceName;
 	}
 

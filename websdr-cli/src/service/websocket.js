@@ -16,7 +16,8 @@ class Websocket {
   }
 
   connect (serial) {
-    this.socket = Socket.connect('http://192.168.0.49:3000/socket/device/' + serial)
+    this.socket = Socket.connect('http://localhost:3000/socket/device/' + serial)
+    console.log('connect!')
   }
 
   send (message, ack) {
@@ -38,7 +39,6 @@ class Websocket {
   close () {
     if (this.socket != null) {
       this.socket.close()
-      this.socket = null
     }
   }
 
@@ -49,4 +49,4 @@ class Websocket {
   }
 }
 
-export default new Websocket()
+export default Websocket.getInstance()
