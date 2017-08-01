@@ -13,11 +13,12 @@ class Websocket {
 
   constructor () {
     this.socket = null
+    this.serial = null
   }
 
   connect (serial) {
     this.socket = Socket.connect('http://localhost:3000/socket/device/' + serial)
-    console.log('connect!')
+    this.serial = serial
   }
 
   send (message, ack) {
@@ -32,7 +33,11 @@ class Websocket {
 
   emit (event, message, ack) {
     if (this.socket != null) {
-      this.socket.emit(event, message, ack)
+      if (ack == null) {
+        this.socket.emit(event, message)
+      } else {
+        this.socket.emit(event, message, ack)
+      }
     }
   }
 
@@ -45,6 +50,12 @@ class Websocket {
   onEvent (event, callback) {
     if (this.socket != null) {
       this.socket.on(event, callback)
+    }
+  }
+
+  offEvent (event) {
+    if (this.socket != null) {
+      this.socket.off(event)
     }
   }
 }

@@ -4,6 +4,9 @@ var router = express.Router();
 var devices = [];
 var node_config = process.env.NODE_ENV || 'development';
 var config = require('config-node')();
+var IQProcessor = require('../services/iqprocessor');
+
+var iqprocessor = new IQProcessor(1024);
 
 /* Wrapper object */
 var socketRouter = { 
@@ -65,27 +68,30 @@ router.get('/open/:serialNumber', function(req, res, next) {
 		deviceChannel.on('connection', (socket) => {
 			// Message listener
 			socket.on('start', (message) => {
-				console.log('start *** ' + message);
+				console.log(socket.id + ' start *** ' + message);
 				device.start();
 				device.listen(function(data) {
-					socket.emit('fft',data);
+
+					socket.emit('fft',Buffer.from(iqprocessor.doFft(data)));
 				});
 			});
 
-			socket.on('stop', (message) => {
-				console.log('stop *** ' + message);
+			socket.on('stop', (message, callback) => {
+				console.log(socket.id + ' stop *** ' + message);
 				device.stop();
 				if (message == 'disconnect') {
-					console.log('disconnect client connection');
-					socket.disconnect(0);	
+					console.log('ACK !!');
+					callback(); // Use call back to confirm disconnect
 				}
 				
 			});
 
 			// disconnect listener
-			socket.on('disconnect', function() {
-				console.log('disconnect *** ');
-				socket.disconnect(0);	
+			socket.on('disconnect', (reason) => {
+				console.log(socket.id + ' disconnect *** ' + reason);
+				socket.disconnect(1);
+				console.log('remove all listeners');
+				socket.removeAllListeners();
 			});
 		});
 	}

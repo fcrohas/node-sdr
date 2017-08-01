@@ -20,14 +20,16 @@ export default {
   data () {
     return {
       serialNumber: '',
-      fftdata: {line: 0, lineSkip: 0, data: [], width: 512, height: 512},
+      fftdata: {line: 0, lineSkip: 0, data: [], width: 512, height: 200},
       lineTime: 0
     }
   },
   methods: {
     disconnect: function () {
       // Close websocket
-      Websocket.emit('stop', 'disconnect', function () {
+      Websocket.emit('stop', 'disconnect', () => {
+        Websocket.offEvent('connect')
+        Websocket.offEvent('fft')
         Websocket.close()
       })
       // close device
@@ -53,7 +55,7 @@ export default {
         imageData = ctx.getImageData(0, fft.lineSkip, fft.width, fft.height + fft.lineSkip)
       }
       for (var i = 0; i < fft.data.length; i++) {
-        var index = (i + fft.line * fft.height) * 4
+        var index = (i + fft.line * fft.width) * 4
         var value = fft.data[i]
         if (value <= 12) {
           imageData.data[index + 0] = 0
@@ -86,15 +88,10 @@ export default {
       // Connect to socket serial number
       Websocket.connect(this.$route.params.serialNumber)
       Websocket.onEvent('connect', () => {
-        Websocket.emit('start', 'test', function () {
-        })
+        Websocket.emit('start', 'test')
       })
-      Websocket.onEvent('fft', data => {
-        var keys = Object.keys(data)
-        var buffer = new Int16Array(keys.length)
-        for (var i = 0; i < keys.length; i++) {
-          buffer[i] = data[keys[i]]
-        }
+      Websocket.onEvent('fft', (data) => {
+        var buffer = new Int16Array(data)
         // Check if scroll is needed
         if (this.lineTime >= this.fftdata.height) {
           this.fftdata.lineSkip = 2
@@ -117,7 +114,7 @@ export default {
 }
 .spectrum {
   border:1px solid #BBB;
-  width: 800px;
-  height: 800px;
+  width: 800;
+  height: 200px;
 }
 </style>

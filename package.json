@@ -12,6 +12,7 @@
     "debug": "~2.6.3",
     "express": "~4.15.2",
     "jade": "~1.11.0",
+    "kissfft-js": "^0.1.4",
     "morgan": "~1.8.1",
     "sdrjs": "0.0.6",
     "serve-favicon": "~2.4.2",
