@@ -58,6 +58,12 @@ class Websocket {
       this.socket.off(event)
     }
   }
+
+  onceEvent (event, callback) {
+    if (this.socket != null) {
+      this.socket.once(event, callback)
+    }
+  }
 }
 
 export default Websocket.getInstance()

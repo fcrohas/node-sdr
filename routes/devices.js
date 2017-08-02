@@ -2,6 +2,7 @@ var express = require('express');
 var fs = require('fs');
 var router = express.Router();
 var devices = [];
+var deviceChannels = [];
 var node_config = process.env.NODE_ENV || 'development';
 var config = require('config-node')();
 var IQProcessor = require('../services/iqprocessor');
@@ -63,37 +64,36 @@ router.get('/open/:serialNumber', function(req, res, next) {
 		const device = devices[req.params.serialNumber];
 		// Open then start
 		device.open();
-		// start here
-		const deviceChannel = socketRouter.websocket.of('/socket/device/' + device.getSerial());
-		deviceChannel.on('connection', (socket) => {
-			// Message listener
-			socket.on('start', (message) => {
-				console.log(socket.id + ' start *** ' + message);
-				device.start();
-				device.listen(function(data) {
+		// create websocket room if needed
+		if (deviceChannels['/socket/device/' + device.getSerial()] == null) {
+			console.log('Create initial room for device '+device.getSerial());
+			deviceChannels['/socket/device/' + device.getSerial()] = socketRouter.websocket.of('/socket/device/' + device.getSerial());
+			deviceChannels['/socket/device/' + device.getSerial()].on('connection', (socket) => {
+				// Message listener
+				socket.on('start', (message) => {
+					console.log(socket.id + ' start *** ' + message);
+					device.start();
+					device.listen(function(data) {
+						socket.emit('fft',Buffer.from(iqprocessor.doFft(data)));
+					});
+				});
 
-					socket.emit('fft',Buffer.from(iqprocessor.doFft(data)));
+				socket.on('stop', (message, callback) => {
+					console.log(socket.id + ' stop *** ' + message);
+					device.stop();
+					if (message == 'disconnect') {
+						callback(); // Use call back to confirm disconnect
+					}
+					
+				});
+
+				// disconnect listener
+				socket.on('disconnect', (reason) => {
+					console.log(socket.id + ' disconnect *** ' + reason);
+					socket.removeAllListeners();
 				});
 			});
-
-			socket.on('stop', (message, callback) => {
-				console.log(socket.id + ' stop *** ' + message);
-				device.stop();
-				if (message == 'disconnect') {
-					console.log('ACK !!');
-					callback(); // Use call back to confirm disconnect
-				}
-				
-			});
-
-			// disconnect listener
-			socket.on('disconnect', (reason) => {
-				console.log(socket.id + ' disconnect *** ' + reason);
-				socket.disconnect(1);
-				console.log('remove all listeners');
-				socket.removeAllListeners();
-			});
-		});
+		}
 	}
 	res.status(200).send();
 });

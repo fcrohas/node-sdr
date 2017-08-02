@@ -87,7 +87,7 @@ export default {
       this.serialNumber = this.$route.params.serialNumber
       // Connect to socket serial number
       Websocket.connect(this.$route.params.serialNumber)
-      Websocket.onEvent('connect', () => {
+      Websocket.onceEvent('connect', () => {
         Websocket.emit('start', 'test')
       })
       Websocket.onEvent('fft', (data) => {
