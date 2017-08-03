@@ -1,4 +1,4 @@
-var Device = require('../device');
+Device = require('../device');
 
 class DummyDevice extends Device {
 
@@ -55,7 +55,7 @@ class DummyDevice extends Device {
 			// Generate 
 			var buffer = new Int16Array(1024);
 			for (var i=0; i< buffer.length; i++) {
-				buffer[i] = Math.random() * 50 - 1; // white noise
+				buffer[i] = Math.random() * 15 - 1; // white noise
 				buffer[i] += Math.sin(i / ( 5 / (Math.PI*2))) * 40; // sinusoide
 				buffer[i] += Math.sin(i / (1.5 / (Math.PI*2))) * 100; // sinusoide
 			}

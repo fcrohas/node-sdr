@@ -20,8 +20,7 @@ export default {
   data () {
     return {
       serialNumber: '',
-      fftdata: {line: 0, lineSkip: 0, data: [], width: 512, height: 200},
-      lineTime: 0
+      fftdata: {width: 512, height: 200}
     }
   },
   methods: {
@@ -45,62 +44,48 @@ export default {
       // Get canvas context
       var fft = binding.value
       var ctx = canvasElement.getContext('2d')
-      var imageData = null
-      if (fft.line === 0) {
-        canvasElement.width = fft.width
-        canvasElement.height = fft.height
-        imageData = ctx.createImageData(fft.width, fft.height)
-      } else {
-        // Scroll if bottom reached
-        imageData = ctx.getImageData(0, fft.lineSkip, fft.width, fft.height + fft.lineSkip)
+      var imageFFT = null
+      // One line width * pixel size [RGBA]
+      var sizeOneLine = fft.width * 4
+      var bufferRGBA = new Uint8Array(sizeOneLine)
+      // setup canvas
+      canvasElement.width = fft.width
+      canvasElement.height = fft.height
+      // Initialize image
+      imageFFT = ctx.createImageData(fft.width, fft.height)
+
+      function render () {
+        ctx.putImageData(imageFFT, 0, 0)
       }
-      for (var i = 0; i < fft.data.length; i++) {
-        var index = (i + fft.line * fft.width) * 4
-        var value = fft.data[i]
-        if (value <= 12) {
-          imageData.data[index + 0] = 0
-          imageData.data[index + 1] = 0
-          imageData.data[index + 2] = value
+
+      // Bind event data
+      Websocket.onEvent('fft', (data) => {
+        var buffer = new Int16Array(data)
+        // Convert buffer to RGBA
+        for (let c = 0; c < buffer.length; c++) {
+          // Red / Green / blue / Alpha
+          var red = 0 + Math.round((200 - 0) * (buffer[c] / 100))
+          var green = 0 + Math.round((1 - 0) * (buffer[c] / 100))
+          var blue = 240 + Math.round((0 - 240) * (buffer[c] / 100))
+          bufferRGBA.set([red, green, blue, 255], c * 4)
         }
-        if ((value >= 12) && (value <= 64)) {
-          imageData.data[index + 0] = 0
-          imageData.data[index + 1] = value
-          imageData.data[index + 2] = value + 30
-        }
-        if ((value >= 64) && (value <= 240)) {
-          imageData.data[index + 0] = value + 60
-          imageData.data[index + 1] = value + 60
-          imageData.data[index + 2] = 0
-        }
-        if (value >= 240) {
-          imageData.data[index + 0] = value + 30
-          imageData.data[index + 1] = 0
-          imageData.data[index + 2] = 0
-        }
-        imageData.data[index + 3] = 255
-      }
-      ctx.putImageData(imageData, 0, 0)
+        // Scroll image down
+        var tmpData = imageFFT.data.slice(0, imageFFT.data.length - sizeOneLine)
+        imageFFT.data.set(bufferRGBA)
+        imageFFT.data.set(tmpData, bufferRGBA.length)
+        // ctx.putImageData(imageFFT, 0, 0)
+        requestAnimationFrame(render)
+      })
     }
   },
   created: function () {
     if (this.$route.params != null) {
+      // Prepare websocket connection
       this.serialNumber = this.$route.params.serialNumber
       // Connect to socket serial number
       Websocket.connect(this.$route.params.serialNumber)
       Websocket.onceEvent('connect', () => {
         Websocket.emit('start', 'test')
-      })
-      Websocket.onEvent('fft', (data) => {
-        var buffer = new Int16Array(data)
-        // Check if scroll is needed
-        if (this.lineTime >= this.fftdata.height) {
-          this.fftdata.lineSkip = 2
-        } else {
-          this.fftdata.lineSkip = 0
-        }
-        this.fftdata.data = buffer
-        this.fftdata.line = this.lineTime - this.fftdata.lineSkip
-        this.lineTime += 1 - this.fftdata.lineSkip
       })
     }
   }
