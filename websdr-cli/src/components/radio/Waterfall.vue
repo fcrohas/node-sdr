@@ -20,7 +20,7 @@ export default {
   data () {
     return {
       serialNumber: '',
-      fftdata: {width: 512, height: 200}
+      fftdata: {samplerate: 200000, bins: 512, width: 512, height: 200}
     }
   },
   methods: {
@@ -52,7 +52,21 @@ export default {
       canvasElement.width = fft.width
       canvasElement.height = fft.height
       // Initialize image
-      imageFFT = ctx.createImageData(fft.width, fft.height)
+      imageFFT = ctx.createImageData(fft.width, fft.height - 20)
+      // font
+      ctx.font = '11px Arial'
+      // draw grid
+      ctx.beginPath()
+      ctx.moveTo(0, fft.height - 20)
+      ctx.lineTo(fft.width, fft.height - 20)
+
+      // draw frequency line
+      for (var i = 1; i < fft.bins; i += 1) {
+        ctx.moveTo(i * fft.width / 10, fft.height - 20)
+        ctx.lineTo(i * fft.width / 10, fft.height - 10)
+        ctx.fillText(Math.round(fft.samplerate / fft.bins * i), i * fft.width / 10 - 5, fft.height)
+      }
+      ctx.stroke()
 
       function render () {
         ctx.putImageData(imageFFT, 0, 0)
@@ -70,10 +84,9 @@ export default {
           bufferRGBA.set([red, green, blue, 255], c * 4)
         }
         // Scroll image down
-        var tmpData = imageFFT.data.slice(0, imageFFT.data.length - sizeOneLine)
+        var tmpData = imageFFT.data.subarray(0, imageFFT.data.length - sizeOneLine)
         imageFFT.data.set(bufferRGBA)
         imageFFT.data.set(tmpData, bufferRGBA.length)
-        // ctx.putImageData(imageFFT, 0, 0)
         requestAnimationFrame(render)
       })
     }
@@ -88,6 +101,18 @@ export default {
         Websocket.emit('start', 'test')
       })
     }
+  },
+  destroyed: function () {
+    // Close websocket
+    Websocket.emit('stop', 'disconnect', () => {
+      Websocket.offEvent('connect')
+      Websocket.offEvent('fft')
+      Websocket.close()
+    })
+    // close device
+    Service.get('/devices/close/' + this.serialNumber).then(response => {
+      this.$router.push({path: '/'})
+    })
   }
 }
 </script>
