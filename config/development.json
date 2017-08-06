@@ -1,4 +1,4 @@
 [{"deviceName":"Realtek RTL2838UHIDIR","serialNumber":"00000001","type":"rtlsdr"},
-	{"deviceName":"SDRPlay RSP2","serialNumber":"170107AC00","type":"sdrplay"},
-	{"deviceName":"Realtek RTL2838UHIDIR","serialNumber":"00000005","type":"rtlsdr"},
-	{"deviceName":"Dummy RTLSDR RT802","serialNumber":"XXXXXXXXXX01","type":"rtlsdr"}]
+ {"deviceName":"SDRPlay RSP2","serialNumber":"170107AC00","type":"sdrplay"},
+ {"deviceName":"Generic RTL2832U Generic RTL2832U","serialNumber":"77771111153705700","type":"rtlsdr"},
+ {"deviceName":"Dummy RTLSDR RT802","serialNumber":"XXXXXXXXXX01","type":"rtlsdr"}]

@@ -6,6 +6,8 @@ class DummyDevice extends Device {
 		super();
 		this.driver = driver;
 		this.device = rtldevice;
+		this.centerFrequency = 105000000;
+		this.sampleRate = 2048000;
 	}
 
 	static getDriverName() {
@@ -15,6 +17,7 @@ class DummyDevice extends Device {
 	static getDevices() {
 	  var devices = [];
 	  devices['XXXXXXXXXX01'] = new DummyDevice(null, null);
+	  console.log('Added device with serial XXXXXXXXXX01');
 	  return devices;
 	}
 
@@ -53,14 +56,15 @@ class DummyDevice extends Device {
 	listen(callback) {
 		setInterval( () => {
 			// Generate 
-			var buffer = new Int16Array(1024);
+			var buffer = new Int16Array(32768);
 			for (var i=0; i< buffer.length; i++) {
 				buffer[i] = Math.random() * 15 - 1; // white noise
-				buffer[i] += Math.sin(i / ( 5 / (Math.PI*2))) * 40; // sinusoide
-				buffer[i] += Math.sin(i / (1.5 / (Math.PI*2))) * 100; // sinusoide
+				buffer[i] += Math.sin(i / ( 5 / (Math.PI*2))) * 140; // sinusoide
+				buffer[i] += Math.cos(i / (1.5 / (Math.PI*2))) * 150; // sinusoide
+				buffer[i+1] = 0;
 			}
 			callback(buffer);
-		},250);
+		},50);
 	}
 }
 

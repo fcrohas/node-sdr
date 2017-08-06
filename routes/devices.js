@@ -6,8 +6,8 @@ var deviceChannels = [];
 var node_config = process.env.NODE_ENV || 'development';
 var config = require('config-node')();
 var IQProcessor = require('../services/iqprocessor');
-
-var iqprocessor = new IQProcessor(1024);
+var FFT_SIZE = 8192;
+var iqprocessor = new IQProcessor(FFT_SIZE);
 
 /* Wrapper object */
 var socketRouter = { 
@@ -72,9 +72,24 @@ router.get('/open/:serialNumber', function(req, res, next) {
 				// Message listener
 				socket.on('start', (message) => {
 					console.log(socket.id + ' start *** ' + message);
+					device.setSampleRate(2048000);
+					device.setCenterFrequency(105000000);
 					device.start();
 					device.listen(function(data) {
-						socket.emit('fft',Buffer.from(iqprocessor.doFft(data)));
+						// Initialize one buffer feedback
+						var fftArray = new Int16Array(data.length);
+						var offset = 0;
+						// Chunk for fft
+						for (var i = 0; i < data.length; i += FFT_SIZE * 2) {
+							// fft size is 512 so double buffer
+							var truncData = data.slice(i, i + FFT_SIZE * 2);
+							// call fft
+							var fftdata = iqprocessor.doFft(truncData);
+							fftArray.set(fftdata, offset * fftdata.length );
+							offset++;
+						}
+						// emit data
+						socket.emit('fft',Buffer.from(fftArray));
 					});
 				});
 

@@ -18,6 +18,7 @@ class RTLSDRDevice extends Device {
 	  const rtldevices = driver.getDevices();
 	  for (var i = 0; i < rtldevices.length; i++) {
         devices[rtldevices[i].serialNumber] = new RTLSDRDevice(driver, rtldevices[i]);
+        console.log('Added device with serial ' + rtldevices[i].serialNumber);
 	  }
 	  return devices;
 	}
@@ -47,11 +48,22 @@ class RTLSDRDevice extends Device {
 	}
 
 	start() {
+		this.device.tunerGain = this.gain;
+		this.device.centerFrequency = this.centerFrequency;
+		this.device.sampleRate = this.sampleRate;
 		this.device.start();
 	}
 
 	stop() {
 		this.device.stop();
+	}
+
+	listen(callback) {
+		this.device.on('data', e => {
+			// Int8Array to int16array
+			// send it
+			callback(new Int16Array(e.buffer));
+		});
 	}
 }
 
