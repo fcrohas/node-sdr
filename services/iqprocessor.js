@@ -21,7 +21,6 @@ class IQProcessor {
 		var output = new Float32Array(inputArray.length);
 	    for (var i = 0; i < inputArray.length; i++) {
 	        var int = inputArray[i];
-	        // If the high bit is on, then it is a negative number, and actually counts backwards.
 	        output[i] = int / 16384;
 	    }
 	    return output;
@@ -31,7 +30,6 @@ class IQProcessor {
 		var output = new Float32Array(inputArray.length);
 	    for (var i = 0; i < inputArray.length; i++) {
 	        var float = inputArray[i];
-	        // If the high bit is on, then it is a negative number, and actually counts backwards.
 	        output[i] = float * 16384;
 	    }
 	    return output;
@@ -40,12 +38,12 @@ class IQProcessor {
 	doFft(data16arr) {
 		// Convert Int16Array to Float32Array
 		var transform = this.fftr.forward(this.int16ToFloat32(data16arr));
-		var transScaled = this.floatToInt16(this.scaleTransform(transform, this.size));
+		var transScaled = transform; //this.scaleTransform(transform, this.size);
 		// compute magnitude with db log
-		var result = new Int16Array(this.size);
+		var result = new Float32Array(this.size);
 		var j = 0;
-		for (var i=0; i < transScaled.length; i += 2) {
-			var magnitude = Math.sqrt(transScaled[i] * transScaled[i] + transScaled[i+1] * transScaled[i+1])
+		for (var i=0; i < transform.length; i += 2) {
+			var magnitude = Math.sqrt(transform[i] * transform[i] + transform[i+1] * transform[i+1])
 			result[j] = 20 * Math.log10(magnitude);
 			j++;
 		}

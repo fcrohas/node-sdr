@@ -8,6 +8,8 @@ class DummyDevice extends Device {
 		this.device = rtldevice;
 		this.centerFrequency = 105000000;
 		this.sampleRate = 2048000;
+		this.listening = false;
+		this.fs = require('fs');
 	}
 
 	static getDriverName() {
@@ -47,24 +49,21 @@ class DummyDevice extends Device {
 
 	start() {
 		console.log('Device listener thread started.');
+		this.listening = true;
 	}
 
 	stop() {
 		console.log('Device listener thread stopped.');
+		this.listening = false;
 	}
 
 	listen(callback) {
-		setInterval( () => {
-			// Generate 
-			var buffer = new Int16Array(32768);
-			for (var i=0; i< buffer.length; i++) {
-				buffer[i] = Math.random() * 15 - 1; // white noise
-				buffer[i] += Math.sin(i / ( 5 / (Math.PI*2))) * 140; // sinusoide
-				buffer[i] += Math.cos(i / (1.5 / (Math.PI*2))) * 150; // sinusoide
-				buffer[i+1] = 0;
+		var readStream = this.fs.createReadStream('./data/SDRSharp_20150804_204423Z_0Hz_IQ.wav');
+		readStream.on('data', (chunk) => {
+			if (this.listening) {
+		  		callback(new Int16Array(chunk));
 			}
-			callback(buffer);
-		},50);
+		});
 	}
 }
 

@@ -75,9 +75,9 @@ router.get('/open/:serialNumber', function(req, res, next) {
 					device.setSampleRate(2048000);
 					device.setCenterFrequency(105000000);
 					device.start();
-					device.listen(function(data) {
+					device.listen((data) => {
 						// Initialize one buffer feedback
-						var fftArray = new Int16Array(data.length);
+						var fftArray = new Float32Array(data.length);						
 						var offset = 0;
 						// Chunk for fft
 						for (var i = 0; i < data.length; i += FFT_SIZE * 2) {
@@ -85,11 +85,11 @@ router.get('/open/:serialNumber', function(req, res, next) {
 							var truncData = data.slice(i, i + FFT_SIZE * 2);
 							// call fft
 							var fftdata = iqprocessor.doFft(truncData);
-							fftArray.set(fftdata, offset * fftdata.length );
+							fftArray.set(fftdata.slice(0, fftdata.length / 2), offset * fftdata.length / 2);
 							offset++;
 						}
 						// emit data
-						socket.emit('fft',Buffer.from(fftArray));
+						socket.emit('fft',Buffer.from(fftArray.buffer));
 					});
 				});
 

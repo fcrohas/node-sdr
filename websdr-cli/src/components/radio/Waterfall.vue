@@ -1,13 +1,43 @@
 <template>
   <md-layout md-gutter>
-    <md-layout></md-layout>
+    <md-layout md-hide-medium></md-layout>
     <md-layout>
       <md-layout class="spacing" md-column>
-        <canvas class="spectrum" v-draw-fft="fftdata"></canvas>
-        <md-button @click="disconnect()" class="md-raised">Close</md-button>
-      </md-layout>
+        <md-card md-with-hover>
+          <md-card-header>
+              <md-card-header-text>
+                <div class="md-title">Waterfall</div>
+                <div class="md-subhead">FFT size is {{fftdata.bins}}</div>
+              </md-card-header-text>
+
+              <md-menu md-size="4" md-direction="bottom left">
+                <md-button class="md-icon-button" md-menu-trigger>
+                  <md-icon>more_vert</md-icon>
+                </md-button>
+
+                <md-menu-content>
+                  <md-menu-item>
+                    <span>Move</span>
+                    <md-icon>zoom_out_map</md-icon>
+                  </md-menu-item>
+                </md-menu-content>
+              </md-menu>
+            </md-card-header>        
+          <md-card-media>
+            <canvas class="spectrum" v-draw-fft="fftdata"></canvas>
+
+            <md-ink-ripple></md-ink-ripple>
+          </md-card-media>
+
+          <md-card-actions>
+            <md-button class="md-icon-button" @click="disconnect()">
+              <md-icon>exit_to_app</md-icon>
+            </md-button>
+          </md-card-actions>
+        </md-card>      
+        </md-layout>
     </md-layout>
-    <md-layout></md-layout>
+    <md-layout md-hide-medium></md-layout>
   </md-layout>
 </template>
 
@@ -30,7 +60,7 @@ export default {
   data () {
     return {
       serialNumber: '',
-      fftdata: {scale: 1 / 10000, samplerate: this.sampleRate, centerFrequency: this.centerFrequency, bins: 4096, width: 4096, height: 800},
+      fftdata: {scale: 1 / 10000, HSVtoRGB: this.HSVtoRGB, samplerate: this.sampleRate, centerFrequency: this.centerFrequency, bins: 4096, width: 4096, height: 600},
       disconnected: false
     }
   },
@@ -47,6 +77,56 @@ export default {
         this.$router.push({path: '/'})
       })
       this.disconnected = true
+    },
+    HSVtoRGB: function (h, s, v) {
+      var r, g, b, i, f, p, q, t
+      if (arguments.length === 1) {
+        s = h.s
+        v = h.v
+        h = h.h
+      }
+      i = Math.floor(h * 6)
+      f = h * 6 - i
+      p = v * (1 - s)
+      q = v * (1 - f * s)
+      t = v * (1 - (1 - f) * s)
+      switch (i % 6) {
+        case 0:
+          r = v
+          g = t
+          b = p
+          break
+        case 1:
+          r = q
+          g = v
+          b = p
+          break
+        case 2:
+          r = p
+          g = v
+          b = t
+          break
+        case 3:
+          r = p
+          g = q
+          b = v
+          break
+        case 4:
+          r = t
+          g = p
+          b = v
+          break
+        case 5:
+          r = v
+          g = p
+          b = q
+          break
+      }
+      return {
+        r: Math.round(r * 255),
+        g: Math.round(g * 255),
+        b: Math.round(b * 255)
+      }
     }
   },
   watch: {
@@ -54,52 +134,58 @@ export default {
   directives: {
     drawFft: function (canvasElement, binding) {
       // Get canvas context
-      var fft = binding.value
+      const fft = binding.value
       var ctx = canvasElement.getContext('2d')
       var imageFFT = null
       // One line width * pixel size [RGBA]
       var sizeOneLine = fft.width * 4
       var bufferRGBA = new Uint8Array(sizeOneLine)
       // setup canvas
-      canvasElement.width = fft.width
-      canvasElement.height = fft.height
+      canvasElement.width = fft.width + 40
+      canvasElement.height = fft.height + 40
       // Initialize image
-      imageFFT = ctx.createImageData(fft.width, fft.height - 20)
+      imageFFT = ctx.createImageData(fft.width, fft.height - 100)
       // font
-      ctx.font = '11px Arial'
+      ctx.font = 'bold 54px Arial'
       // draw grid
       ctx.beginPath()
-      ctx.moveTo(0, fft.height - 20)
-      ctx.lineTo(fft.width, fft.height - 20)
+      // Draw component contour
+      ctx.lineWidth = '4'
+      ctx.strokeStyle = 'white'
+      ctx.rect(18, 18, fft.width + 2, fft.height + 2)
 
+      ctx.lineWidth = '6'
+      ctx.moveTo(20, fft.height - 78)
+      ctx.lineTo(20 + fft.width, fft.height - 78)
+      var baseFrequency = (fft.centerFrequency - fft.samplerate / 2) / 1000
+      ctx.lineWidth = '3'
       // draw frequency line each 10
-      for (var i = 1; i < fft.bins; i += 500) {
-        ctx.moveTo(i, fft.height - 20)
-        ctx.lineTo(i, fft.height - 10)
-        ctx.fillText(Math.round(fft.samplerate / fft.bins * i * fft.scale), i - 25, fft.height)
+      for (var i = 1; i < fft.bins; i += 1000) {
+        ctx.moveTo(i, fft.height - 78)
+        ctx.lineTo(i, fft.height - 58)
+        var frequency = baseFrequency + Math.round(((fft.samplerate / 2) / 1000) / fft.bins * i)
+        const text = (frequency > 1000) ? (frequency / 1000) + ' Mhz' : frequency + ' kHz'
+/*        const textSize = ctx.measureText(text) */
+        ctx.fillStyle = '#ffffff'
+        ctx.fillText(text, i - 25, fft.height - 10)
       }
       ctx.stroke()
 
       function render () {
-        ctx.putImageData(imageFFT, 0, 0)
+        ctx.putImageData(imageFFT, 20, 20)
       }
 
       // Bind event data
       Websocket.onEvent('fft', (data) => {
-        var buffer = new Int16Array(data)
+        const buffer = new Float32Array(data)
         // Split received buffer in bins
         for (let i = 0; i < buffer.length; i += fft.bins) {
           var line = buffer.slice(i, i + fft.bins)
           // Convert buffer to RGBA
           for (let c = 0; c < line.length; c++) {
-            // Red / Green / blue / Alpha
-            // var red = 255 * Math.abs(Math.sin(line[c] / 16384 * 3.1415927 * 3 / 2))
-            // var green = 255 * Math.sin(line[c] / 16384 * 3.1415927)
-            // var blue = 255 * Math.abs(Math.sin(line[c] / 16384 * 3.1415927 * 5 / 2))
-            var red = Math.round(120 * buffer[c] / 16384)
-            var green = Math.round(20 * buffer[c] / 16384)
-            var blue = 230 + Math.round(120 * buffer[c] / 16384)
-            bufferRGBA.set([red, green, blue, 255], c * 4)
+            // HSV
+            const color = fft.HSVtoRGB(0.65 - (1 + buffer[c] / 96) / 2, 0.7, 0.8)
+            bufferRGBA.set([color.r, color.g, color.b, 255], c * 4)
           }
           // Scroll image down
           var tmpData = imageFFT.data.subarray(0, imageFFT.data.length - sizeOneLine)
@@ -147,5 +233,6 @@ export default {
   border:1px solid #BBB;
   width: 800;
   height: 200px;
+  background: black;
 }
 </style>
