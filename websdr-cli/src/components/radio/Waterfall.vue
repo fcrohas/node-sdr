@@ -177,7 +177,7 @@ export default {
 
       // Bind event data
       Websocket.onEvent('fft', (data) => {
-        const buffer = new Float32Array(data)
+        const buffer = new Int8Array(data)
         // Split received buffer in bins
         for (let i = 0; i < buffer.length; i += fft.bins) {
           var line = buffer.slice(i, i + fft.bins)

@@ -61,9 +61,15 @@ class DummyDevice extends Device {
 		var readStream = this.fs.createReadStream('./data/SDRSharp_20150804_204423Z_0Hz_IQ.wav');
 		readStream.on('data', (chunk) => {
 			if (this.listening) {
-		  		callback(new Int16Array(chunk));
+				console.log('chunk.length='+chunk.length);
+				callback(new Int16Array(chunk));
+				setTimeout(() => {
+					readStream.resume();
+				}, 163);
+				readStream.pause();				
 			}
 		});
+
 	}
 }
 
