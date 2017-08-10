@@ -6,7 +6,7 @@ var deviceChannels = [];
 var node_config = process.env.NODE_ENV || 'development';
 var config = require('config-node')();
 var IQProcessor = require('../services/iqprocessor');
-var FFT_SIZE = 8192;
+var FFT_SIZE = 4096;
 var iqprocessor = new IQProcessor(FFT_SIZE);
 
 /* Wrapper object */
@@ -73,7 +73,7 @@ router.get('/open/:serialNumber', function(req, res, next) {
 				socket.on('start', (message) => {
 					console.log(socket.id + ' start *** ' + message);
 					device.setSampleRate(2048000);
-					device.setCenterFrequency(105000000);
+					device.setCenterFrequency(106100000);
 					device.start();
 					device.listen((data) => {
 						// Initialize one buffer feedback
@@ -86,25 +86,33 @@ router.get('/open/:serialNumber', function(req, res, next) {
 							var truncData = data.slice(i, i + FFT_SIZE * 2);
 							// call fft
 							var fftdata = iqprocessor.doFft(truncData);
-							fftArray.set(fftdata.slice(0, fftdata.length / 2), offset * fftdata.length / 2);
-							fftSize += fftdata.length / 2;
+							fftArray.set(fftdata, offset * fftdata.length);
+							fftSize += fftdata.length;
 							offset++;
 						}
 						// emit data
-						var trunked = fftArray.slice(0, fftSize);
-						var arr8 = new Int8Array(trunked.length);
-						for (var i=0; i < trunked.length; i++) {
-							arr8[i] = Math.round(trunked[i]);
+						fftSize = fftSize / 4; // 32 bits -> 8 bits
+						var arr8 = new Int8Array(fftSize / 4);
+						for (var i=0; i < fftSize / 4; i++) {
+							arr8[i] = Math.round(fftArray[i]);
 						}
-						socket.emit('fft',Buffer.from(arr8.buffer));
+						// invert FFTSIZE / 2
+						var halfup = arr8.slice(FFT_SIZE / 2);
+						var datareverse = new Int8Array(fftSize);
+						datareverse.set(halfup);
+						datareverse.set(arr8.slice(0, FFT_SIZE / 2), FFT_SIZE / 2);
+
+						socket.emit('fft',Buffer.from(datareverse.buffer));
 					});
 				});
 
 				socket.on('stop', (message, callback) => {
-					console.log(socket.id + ' stop *** ' + message);
+					console.log(socket.id + ' stop ***' + message + '***');
 					device.stop();
 					if (message == 'disconnect') {
 						callback(); // Use call back to confirm disconnect
+						console.log('disconnect client session from server')
+						socket.disconnect(0);
 					}
 					
 				});

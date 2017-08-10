@@ -1,6 +1,6 @@
 class Device {
 	constructor() {
-		this.centerFrequency = 105000000;
+		this.centerFrequency = 106100000;
 		this.sampleRate = 2048000;
 		this.gain = 421;
 	}

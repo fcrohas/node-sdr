@@ -8,7 +8,7 @@ class SDRPlayDevice extends Device {
 		this.device = sdrplaydevice;
 		this.streamCallback = null;
 		this.ASYNC_BUF_SIZE = 32 * 512;
-		this.ASYNC_BUF_NUMBER = 16;
+		this.ASYNC_BUF_NUMBER = 15;
 		this.bufferData = new Int16Array(this.ASYNC_BUF_NUMBER * this.ASYNC_BUF_SIZE);
 		this.bufferOffset = 0;
 	}
@@ -53,9 +53,9 @@ class SDRPlayDevice extends Device {
 	}
 
 	start() {
-		this.driver.RSPII_AntennaControl(0);
+		this.driver.RSPII_AntennaControl(1);
 		this.driver.RSPII_BiasTControl(1);
-		this.driver.StreamInit(58, this.sampleRate / 1000000, this.centerFrequency / 1000000,1536,0,0,28,0,128, (xi,xq,firstSampleNum,grChanged,rfChanged,fsChanged,numSamples, reset) => {
+		this.driver.StreamInit(58, this.sampleRate / 1000000, this.centerFrequency / 1000000,1536,0,2,28,0,128, (xi,xq,firstSampleNum,grChanged,rfChanged,fsChanged,numSamples, reset) => {
 			if (this.streamCallback != null) {
 				/* count1 is lesser of input samples and samples to end of buffer */
 				/* count2 is the remainder, generally zero */

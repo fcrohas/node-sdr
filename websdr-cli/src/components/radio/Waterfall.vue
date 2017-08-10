@@ -54,7 +54,7 @@ export default {
     },
     centerFrequency: {
       type: Number,
-      default: 105000000
+      default: 106100000
     }
   },
   data () {
@@ -157,17 +157,23 @@ export default {
       ctx.lineWidth = '6'
       ctx.moveTo(20, fft.height - 78)
       ctx.lineTo(20 + fft.width, fft.height - 78)
-      var baseFrequency = (fft.centerFrequency - fft.samplerate / 2) / 1000
-      ctx.lineWidth = '3'
+      var baseFrequency = (fft.centerFrequency - (fft.samplerate / 2))
+      ctx.lineWidth = '8'
       // draw frequency line each 10
-      for (var i = 1; i < fft.bins; i += 1000) {
-        ctx.moveTo(i, fft.height - 78)
-        ctx.lineTo(i, fft.height - 58)
-        var frequency = baseFrequency + Math.round(((fft.samplerate / 2) / 1000) / fft.bins * i)
-        const text = (frequency > 1000) ? (frequency / 1000) + ' Mhz' : frequency + ' kHz'
-/*        const textSize = ctx.measureText(text) */
+      var step = fft.bins / 6
+      for (var i = step; i < fft.bins - step; i += step) {
+        ctx.moveTo(i + 18, fft.height - 78)
+        ctx.lineTo(i + 18, fft.height - 58)
+        var frequency = baseFrequency + Math.round((fft.samplerate / fft.bins) * i)
+        var unit = ' KHz'
+        if (frequency > 1000) {
+          unit = ' MHz'
+        }
+        frequency = (frequency > 1000) ? (frequency / 1000000) : (frequency / 1000)
+        // round frequency
+        frequency = Math.round(frequency * 100) / 100
         ctx.fillStyle = '#ffffff'
-        ctx.fillText(text, i - 25, fft.height - 10)
+        ctx.fillText(frequency + unit, i + 18 - 25, fft.height - 10)
       }
       ctx.stroke()
 
@@ -184,7 +190,7 @@ export default {
           // Convert buffer to RGBA
           for (let c = 0; c < line.length; c++) {
             // HSV
-            const color = fft.HSVtoRGB(0.65 - (1 + buffer[c] / 96) / 2, 0.7, 0.8)
+            const color = fft.HSVtoRGB(0.5 - (1 + buffer[c] / 100) / 2, 0.7, 0.8)
             bufferRGBA.set([color.r, color.g, color.b, 255], c * 4)
           }
           // Scroll image down
