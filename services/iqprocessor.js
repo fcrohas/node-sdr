@@ -29,7 +29,12 @@ class IQProcessor {
 
 	doFft(dataarr) {
 		// Convert Int16Array to Float32Array
-		var transform = this.fftr.forward(this.intToFloat32(dataarr));
+		var transform = null;
+		if (dataarr instanceof Float32Array) {
+			transform = this.fftr.forward(dataarr);
+		} else {
+			transform = this.fftr.forward(this.intToFloat32(dataarr));
+		}
 		// compute magnitude with db log
 		var result = new Float32Array(this.size);
 		var j = 0;

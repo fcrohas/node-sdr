@@ -124,8 +124,10 @@ router.get('/open/:serialNumber', function(req, res, next) {
 				});
 			});
 		}
+		res.status(200).send();
+	} else {
+		res.status(500).send('Unable to open device with serial : '+req.params.serialNumber);
 	}
-	res.status(200).send();
 });
 
 router.get('/close/:serialNumber', function(req, res, next) {
@@ -134,6 +136,8 @@ router.get('/close/:serialNumber', function(req, res, next) {
 		// Only one by serial number
 		device.close();
 		res.status(200).send();
+	} else {
+		res.status(500).send('Unable to close device with serial : '+req.params.serialNumber);	
 	}
 });
 

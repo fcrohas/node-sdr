@@ -190,7 +190,7 @@ export default {
           // Convert buffer to RGBA
           for (let c = 0; c < line.length; c++) {
             // HSV
-            const color = fft.HSVtoRGB(0.5 - (1 + buffer[c] / 100) / 2, 0.7, 0.8)
+            const color = fft.HSVtoRGB(0.75 - (1 + buffer[c] / 100) / 2, 0.7, 0.8)
             bufferRGBA.set([color.r, color.g, color.b, 255], c * 4)
           }
           // Scroll image down

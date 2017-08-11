@@ -27,6 +27,10 @@
               </md-card>
             </md-layout>
           </md-layout>
+          <md-snackbar :md-position="'top center'" ref="snackbar" :md-duration="5000">
+              <span>{{errors.join('.')}}</span>
+              <md-button class="md-accent" md-theme="light-blue" @click="clearErrors()">Retry</md-button>
+          </md-snackbar>    
         </md-layout>
         <md-layout md-hide-medium></md-layout>
     </md-layout>
@@ -44,7 +48,7 @@ export default {
   },
   data () {
     return {
-
+      errors: []
     }
   },
   methods: {
@@ -68,9 +72,15 @@ export default {
         this.$router.push({path: 'spectrum/' + serialNumber})
       }).catch(e => {
         /* Error try to send a close */
+        this.errors.push(e.response.data)
+        this.$refs.snackbar.open()
         Service.get('/devices/close/' + serialNumber).then(response => {
         })
       })
+    },
+    clearErrors: function () {
+      this.errors = []
+      this.$refs.snackbar.close()
     }
   }
 }
