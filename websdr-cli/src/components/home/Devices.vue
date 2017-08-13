@@ -38,6 +38,7 @@
 
 <script>
 import Service from '../../service/api'
+
 export default {
 
   name: 'Devices',
@@ -72,6 +73,7 @@ export default {
         this.$router.push({path: 'spectrum/' + serialNumber})
       }).catch(e => {
         /* Error try to send a close */
+        this.errors = []
         this.errors.push(e.response.data)
         this.$refs.snackbar.open()
         Service.get('/devices/close/' + serialNumber).then(response => {
@@ -82,6 +84,8 @@ export default {
       this.errors = []
       this.$refs.snackbar.close()
     }
+  },
+  created () {
   }
 }
 </script>

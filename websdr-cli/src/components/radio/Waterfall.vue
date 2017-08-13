@@ -1,47 +1,41 @@
 <template>
-  <md-layout md-gutter>
-    <md-layout md-hide-medium></md-layout>
-    <md-layout>
-      <md-layout class="spacing" md-column>
-        <md-card md-with-hover>
-          <md-card-header>
-              <md-card-header-text>
-                <div class="md-title">Waterfall</div>
-                <div class="md-subhead">FFT size is {{fftdata.bins}}</div>
-              </md-card-header-text>
+  <md-card md-with-hover class="full-size">
+    <md-card-header>
+      <md-card-header-text>
+        <div class="md-title">Waterfall</div>
+        <div class="md-subhead">FFT size is {{bins}}</div>
+      </md-card-header-text>
 
-              <md-menu md-size="4" md-direction="bottom left">
-                <md-button class="md-icon-button" md-menu-trigger>
-                  <md-icon>more_vert</md-icon>
-                </md-button>
+      <md-menu md-size="4" md-direction="bottom left">
+        <md-button class="md-icon-button" md-menu-trigger>
+          <md-icon>more_vert</md-icon>
+        </md-button>
 
-                <md-menu-content>
-                  <md-menu-item>
-                    <span>Move</span>
-                    <md-icon>zoom_out_map</md-icon>
-                  </md-menu-item>
-                </md-menu-content>
-              </md-menu>
-            </md-card-header>        
-          <md-card-media>
-            <canvas class="spectrum" v-draw-fft="fftdata"></canvas>
+        <md-menu-content>
+          <md-menu-item>
+            <span>Move</span>
+            <md-icon>zoom_out_map</md-icon>
+          </md-menu-item>
+        </md-menu-content>
+      </md-menu>
+  </md-card-header>        
+    <md-card-media>
+      <div>
+        <canvas ref="spectrum" class="spectrum"></canvas>
+        <canvas ref="overlay" class="overlay"></canvas>
+      </div>
+    </md-card-media>
 
-            <md-ink-ripple></md-ink-ripple>
-          </md-card-media>
-
-          <md-card-actions>
-            <md-button class="md-icon-button" @click="disconnect()">
-              <md-icon>exit_to_app</md-icon>
-            </md-button>
-          </md-card-actions>
-        </md-card>      
-        </md-layout>
-    </md-layout>
-    <md-layout md-hide-medium></md-layout>
-  </md-layout>
+    <md-card-actions>
+      <md-button class="md-icon-button" @click="disconnect()">
+        <md-icon>exit_to_app</md-icon>
+      </md-button>
+    </md-card-actions>
+  </md-card>      
 </template>
 
 <script>
+import { mapGetters, mapActions } from 'vuex'
 import Websocket from '../../service/websocket'
 import Service from '../../service/api'
 
@@ -52,19 +46,38 @@ export default {
       type: Number,
       default: 2048000
     },
-    centerFrequency: {
+    frequency: {
       type: Number,
       default: 106100000
     }
   },
+  computed: mapGetters({
+    tunedFrequency: 'tunedFrequency',
+    currentBandwidth: 'currentBandwidth',
+    centerFrequency: 'centerFrequency'
+  }),
   data () {
     return {
       serialNumber: '',
-      fftdata: {scale: 1 / 10000, HSVtoRGB: this.HSVtoRGB, samplerate: this.sampleRate, centerFrequency: this.centerFrequency, bins: 4096, width: 4096, height: 600},
-      disconnected: false
+      bins: 4096,
+      width: 4096,
+      height: 600,
+      bandwidth: 0,
+      fftdata: {scale: 1 / 10000},
+      overlayPos: {x: 0, y: 0},
+      overlayCanvas: null,
+      waterfallCanvas: null,
+      disconnected: false,
+      bufferRGBA: null,
+      imageFFT: null,
+      spectrumCtx: null
     }
   },
   methods: {
+    ...mapActions([
+      'changeFrequency',
+      'changeBandwidth'
+    ]),
     disconnect: function () {
       // Close websocket
       Websocket.emit('stop', 'disconnect', () => {
@@ -127,24 +140,83 @@ export default {
         g: Math.round(g * 255),
         b: Math.round(b * 255)
       }
-    }
-  },
-  watch: {
-  },
-  directives: {
-    drawFft: function (canvasElement, binding) {
+    },
+    drawFrequency: function (ctx, overlay) {
+      // limit bounding
+      if (overlay.x < 20) return
+      if (overlay.x > 20 + this.width) return
+      // compute binSize
+      const binSize = this.sampleRate / this.bins
+      // bandwidth in pixel
+      const bwPix = this.bandwidth / binSize
+      ctx.beginPath()
+      // Draw frequency selection
+      ctx.lineWidth = '8'
+      ctx.strokeStyle = 'red'
+      ctx.moveTo(overlay.x, 28)
+      ctx.lineTo(overlay.x, this.height - 88)
+      ctx.stroke()
+      // draw lower bandwidth
+      ctx.beginPath()
+      ctx.lineWidth = '2'
+      ctx.strokeStyle = 'white'
+      ctx.moveTo(overlay.x - bwPix / 2, 28)
+      ctx.lineTo(overlay.x - bwPix / 2, this.height - 88)
+      // draw upper bandwidth
+      ctx.moveTo(overlay.x + bwPix / 2, 28)
+      ctx.lineTo(overlay.x + bwPix / 2, this.height - 88)
+      ctx.stroke()
+      // slight overlay of area
+      ctx.fillStyle = 'rgba(225,225,255,0.4)'
+      ctx.fillRect(overlay.x - bwPix / 2, 28, bwPix, this.height - 116)
+    },
+    getMousePos: function (canvas, evt) {
+      var rect = canvas.getBoundingClientRect()
+      return {
+        x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
+        y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
+      }
+    },
+    bandwidthChange: function (evt) {
+      var e = window.event || evt // old IE support
+      var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)))
+      this.bandwidth += delta * 5000
+      this.changeBandwidth(this.bandwidth)
+    },
+    drawOverlay: function (canvasElement, overlay) {
       // Get canvas context
-      const fft = binding.value
       var ctx = canvasElement.getContext('2d')
-      var imageFFT = null
-      // One line width * pixel size [RGBA]
-      var sizeOneLine = fft.width * 4
-      var bufferRGBA = new Uint8Array(sizeOneLine)
+      canvasElement.width = this.width + 40
+      canvasElement.height = this.height + 40
+      canvasElement.addEventListener('mousemove', (evt) => {
+        ctx.clearRect(0, 0, canvasElement.width, canvasElement.height)
+        this.overlay = this.getMousePos(canvasElement, evt)
+        this.drawFrequency(ctx, this.overlay)
+      }, false)
+      canvasElement.addEventListener('mousewheel', (evt) => {
+        ctx.clearRect(0, 0, canvasElement.width, canvasElement.height)
+        this.overlay = this.getMousePos(canvasElement, evt)
+        this.bandwidthChange(evt)
+        this.drawFrequency(ctx, this.overlay)
+      }, false)
+      canvasElement.addEventListener('DOMMouseScroll', (evt) => {
+        ctx.clearRect(0, 0, canvasElement.width, canvasElement.height)
+        this.overlay = this.getMousePos(canvasElement, evt)
+        this.bandwidthChange(evt)
+        this.drawFrequency(ctx, this.overlay)
+      }, false)
+    },
+    drawWaterfall: function (canvasElement, fft) {
+      // Get canvas context
+      var ctx = canvasElement.getContext('2d')
+      this.spectrumCtx = ctx
       // setup canvas
-      canvasElement.width = fft.width + 40
-      canvasElement.height = fft.height + 40
+      canvasElement.width = this.width + 40
+      canvasElement.height = this.height + 40
       // Initialize image
-      imageFFT = ctx.createImageData(fft.width, fft.height - 100)
+      if (this.imageFFT == null) {
+        this.imageFFT = ctx.createImageData(this.width, this.height - 100)
+      }
       // font
       ctx.font = 'bold 54px Arial'
       // draw grid
@@ -152,19 +224,19 @@ export default {
       // Draw component contour
       ctx.lineWidth = '4'
       ctx.strokeStyle = 'white'
-      ctx.rect(18, 18, fft.width + 2, fft.height + 2)
+      ctx.rect(18, 18, this.width + 2, this.height + 2)
 
       ctx.lineWidth = '6'
-      ctx.moveTo(20, fft.height - 78)
-      ctx.lineTo(20 + fft.width, fft.height - 78)
-      var baseFrequency = (fft.centerFrequency - (fft.samplerate / 2))
+      ctx.moveTo(20, this.height - 78)
+      ctx.lineTo(20 + this.width, this.height - 78)
+      var baseFrequency = (this.centerFrequency - (this.sampleRate / 2))
       ctx.lineWidth = '8'
       // draw frequency line each 10
-      var step = fft.bins / 6
-      for (var i = step; i < fft.bins - step; i += step) {
-        ctx.moveTo(i + 18, fft.height - 78)
-        ctx.lineTo(i + 18, fft.height - 58)
-        var frequency = baseFrequency + Math.round((fft.samplerate / fft.bins) * i)
+      var step = this.bins / 6
+      for (var i = step; i < this.bins - step; i += step) {
+        ctx.moveTo(i + 18, this.height - 78)
+        ctx.lineTo(i + 18, this.height - 58)
+        var frequency = baseFrequency + Math.round((this.sampleRate / this.bins) * i)
         var unit = ' KHz'
         if (frequency > 1000) {
           unit = ' MHz'
@@ -173,58 +245,67 @@ export default {
         // round frequency
         frequency = Math.round(frequency * 100) / 100
         ctx.fillStyle = '#ffffff'
-        ctx.fillText(frequency + unit, i + 18 - 25, fft.height - 10)
+        ctx.fillText(frequency + unit, i + 18 - 25, this.height - 10)
       }
       ctx.stroke()
-
-      function render () {
-        ctx.putImageData(imageFFT, 20, 20)
-      }
-
+    },
+    reDraw: function () {
+      // Scroll image down
+      var tmpData = this.imageFFT.data.subarray(0, this.imageFFT.data.length - this.width * 4)
+      this.imageFFT.data.set(this.bufferRGBA)
+      this.imageFFT.data.set(tmpData, this.bufferRGBA.length)
+      requestAnimationFrame(() => {
+        this.spectrumCtx.putImageData(this.imageFFT, 20, 20)
+      })
+    }
+  },
+  watch: {
+    centerFrequency () {
+      this.drawWaterfall(this.$refs.spectrum, this.fftdata)
+    },
+    currentBandwidth () {
+      this.bandwidth = this.currentBandwidth
+    },
+    tunedFrequency () {
+    }
+  },
+  mounted: function () {
+    if (this.$route.params != null) {
+      // Prepare websocket connection
+      this.serialNumber = this.$route.params.serialNumber
+      // initialize
+      this.bandwidth = this.currentBandwidth
+      // Initial buffer
+      this.bufferRGBA = new Uint8Array(this.width * 4)
+      // Draw once connected
+      this.drawOverlay(this.$refs.overlay, this.overlayPos)
+      this.drawWaterfall(this.$refs.spectrum, this.fftdata)
+      // Connect to socket serial number
+      Websocket.connect(this.$route.params.serialNumber)
+      Websocket.onceEvent('connect', () => {
+        // Start on connect
+        Websocket.emit('start', 'test')
+      })
       // Bind event data
       Websocket.onEvent('fft', (data) => {
         const buffer = new Int8Array(data)
         // Split received buffer in bins
-        for (let i = 0; i < buffer.length; i += fft.bins) {
-          var line = buffer.slice(i, i + fft.bins)
+        for (let i = 0; i < buffer.length; i += this.bins) {
+          var line = buffer.slice(i, i + this.bins)
           // Convert buffer to RGBA
           for (let c = 0; c < line.length; c++) {
             // HSV
-            const color = fft.HSVtoRGB(0.75 - (1 + buffer[c] / 100) / 2, 0.7, 0.8)
-            bufferRGBA.set([color.r, color.g, color.b, 255], c * 4)
+            const color = this.HSVtoRGB(0.55 - (1 + buffer[c] / 100) / 2, 0.7, 0.8)
+            this.bufferRGBA.set([color.r, color.g, color.b, 255], c * 4)
           }
-          // Scroll image down
-          var tmpData = imageFFT.data.subarray(0, imageFFT.data.length - sizeOneLine)
-          imageFFT.data.set(bufferRGBA)
-          imageFFT.data.set(tmpData, bufferRGBA.length)
-          requestAnimationFrame(render)
+          this.reDraw()
         }
-      })
-    }
-  },
-  created: function () {
-    if (this.$route.params != null) {
-      // Prepare websocket connection
-      this.serialNumber = this.$route.params.serialNumber
-      // Connect to socket serial number
-      Websocket.connect(this.$route.params.serialNumber)
-      Websocket.onceEvent('connect', () => {
-        Websocket.emit('start', 'test')
       })
     }
   },
   destroyed: function () {
     if (!this.disconnected) {
-      // Close websocket
-      Websocket.emit('stop', 'disconnect', () => {
-        Websocket.offEvent('connect')
-        Websocket.offEvent('fft')
-        Websocket.close()
-      })
-      // close device
-      Service.get('/devices/close/' + this.serialNumber).then(response => {
-        this.$router.push({path: '/'})
-      })
+      this.disconnect()
     }
   }
 }
@@ -232,13 +313,29 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.full-size {
+  width: 100%;
+  height: 100%;
+}
 .spacing {
   padding : 15px;
 }
+.fake {
+  width: 100%;
+  height: 100%;
+}
 .spectrum {
+  position: absolute;
   border:1px solid #BBB;
-  width: 800;
-  height: 200px;
+  width: 100%;
+  height: 600;
   background: black;
+  z-index: 0;
+}
+.overlay {
+  position: absolute;
+  width: 100%;
+  height: 600;
+  z-index: 1;
 }
 </style>

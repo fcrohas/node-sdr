@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Home from '@/components/home/Home'
-import Waterfall from '@/components/radio/Waterfall'
+import Radio from '@/components/radio/Radio'
 
 Vue.use(Router)
 
@@ -14,8 +14,8 @@ export default new Router({
     },
     {
       path: '/spectrum/:serialNumber',
-      name: 'Waterfall',
-      component: Waterfall
+      name: 'Radio',
+      component: Radio
     }
   ]
 })

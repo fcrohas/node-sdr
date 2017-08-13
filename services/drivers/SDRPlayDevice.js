@@ -8,7 +8,7 @@ class SDRPlayDevice extends Device {
 		this.device = sdrplaydevice;
 		this.streamCallback = null;
 		this.ASYNC_BUF_SIZE = 32 * 512;
-		this.ASYNC_BUF_NUMBER = 15;
+		this.ASYNC_BUF_NUMBER = 16;
 		this.bufferData = new Int16Array(this.ASYNC_BUF_NUMBER * this.ASYNC_BUF_SIZE);
 		this.bufferOffset = 0;
 	}
@@ -55,30 +55,40 @@ class SDRPlayDevice extends Device {
 	start() {
 		this.driver.RSPII_AntennaControl(1);
 		this.driver.RSPII_BiasTControl(1);
-		this.driver.StreamInit(58, this.sampleRate / 1000000, this.centerFrequency / 1000000,1536,0,2,28,0,128, (xi,xq,firstSampleNum,grChanged,rfChanged,fsChanged,numSamples, reset) => {
+		this.driver.StreamInit(58, this.sampleRate / 1000000, this.centerFrequency / 1000000,1536,0,2,28,0,128, (xibuffer,xqbuffer,firstSampleNum,grChanged,rfChanged,fsChanged,numSamples, reset) => {
 			if (this.streamCallback != null) {
-				/* count1 is lesser of input samples and samples to end of buffer */
-				/* count2 is the remainder, generally zero */
+				// Convert arraybuffedr to int16array as it is short
+				const xi = new Int16Array(xibuffer.buffer);
+				const xq = new Int16Array(xqbuffer.buffer);
+				// New buffer end 
 				var end = this.bufferOffset + (numSamples * 2);
-				var count2 = end - (this.ASYNC_BUF_SIZE * this.ASYNC_BUF_NUMBER);
-				if (count2 < 0) count2 = 0; /* count2 is samples wrapping around to start of buf */
-				var count1 = (numSamples * 2) - count2; /* count1 is samples fitting before the end of buf */
+				var count2 = end - (this.ASYNC_BUF_SIZE * this.ASYNC_BUF_NUMBER); // sample after end of buffer
+				if (count2 < 0) count2 = 0; // not at the end of buffer 
+				var count1 = (numSamples * 2) - count2;  // place sample next to offset
 				/* flag */
-				var new_buf_flag = ((this.bufferOffset & (this.ASYNC_BUF_SIZE - 1)) < (end & (this.ASYNC_BUF_SIZE - 1))) ? 0 : 1;
+				//var new_buf_flag = ((this.bufferOffset & (this.ASYNC_BUF_SIZE - 1)) < (end & (this.ASYNC_BUF_SIZE - 1))) ? 0 : 1;
+				var new_buf_flag = (count2 > 0) ? 1 : 0;
 
 				var input_index = 0;
-				for (var i = 0; i < count1 >> 1; i++) {
+				// Interleave at buffer offset
+				for (var i = 0; i < count1 / 2; i++) {
 					// Copy I low / high part
-					this.bufferData[this.bufferOffset] = xi[input_index] & 0xff;
+					this.bufferData[this.bufferOffset] = xi[input_index];
 					this.bufferOffset++;
-					this.bufferData[this.bufferOffset] = (xi[input_index] >> 8) & 0xff;
 					// Copy Q low / high part
-					this.bufferOffset++;
-					this.bufferData[this.bufferOffset] = xq[input_index] & 0xff;
-					this.bufferOffset++;
-					this.bufferData[this.bufferOffset] = (xq[input_index] >> 8 ) & 0xff;
+					this.bufferData[this.bufferOffset] = xq[input_index];
 					this.bufferOffset++;
 					input_index++;
+				}
+
+				// merge I/Q buffer
+				if (new_buf_flag) {
+					// end = this.bufferOffset + this.ASYNC_BUF_SIZE * (this.ASYNC_BUF_NUMBER - 1);
+					// end &= this.ASYNC_BUF_SIZE * this.ASYNC_BUF_NUMBER - 1;
+					// end &= ~(this.ASYNC_BUF_SIZE - 1);					
+					//var arr = this.bufferData.slice(end, this.ASYNC_BUF_SIZE);
+					// callback
+					this.streamCallback(this.bufferData);
 				}
 
 				if(this.bufferOffset >= this.ASYNC_BUF_SIZE * this.ASYNC_BUF_NUMBER) {
@@ -86,26 +96,15 @@ class SDRPlayDevice extends Device {
 				}
 
 				// remaining data
-				for (var i = 0; i < count2 >> 1; i++) {
+				for (var i = 0; i < count2 / 2; i++) {
 					// Copy I low / high part
-					this.bufferData[this.bufferOffset] = xi[input_index] & 0xff;
+					this.bufferData[this.bufferOffset] = xi[input_index];
 					this.bufferOffset++;
-					this.bufferData[this.bufferOffset] = (xi[input_index] >> 8) & 0xff;
 					// Copy Q low / high part
-					this.bufferOffset++;
-					this.bufferData[this.bufferOffset] = xq[input_index] & 0xff;
-					this.bufferOffset++;
-					this.bufferData[this.bufferOffset] = (xq[input_index] >> 8 ) & 0xff;
+					this.bufferData[this.bufferOffset] = xq[input_index];
 					this.bufferOffset++;
 					input_index++;
 				}				
-				// merge I/Q buffer
-				if (new_buf_flag) {
-					end = this.bufferOffset + this.ASYNC_BUF_SIZE * (this.ASYNC_BUF_NUMBER - 1);
-					end &= this.ASYNC_BUF_SIZE * this.ASYNC_BUF_NUMBER - 1;
-					end &= ~(this.ASYNC_BUF_SIZE - 1);					
-					this.streamCallback(this.bufferData.slice(end, this.ASYNC_BUF_SIZE));
-				}
 			}
 		}, function(gRdB, lnagRdB) {
 			console.log("gRdb="+gRdB+" lnagRdB="+lnagRdB);

@@ -6,8 +6,6 @@ class DummyDevice extends Device {
 		super();
 		this.driver = driver;
 		this.device = rtldevice;
-		this.centerFrequency = 105000000;
-		this.sampleRate = 2048000;
 		this.threads = require('threads');
 	}
 
@@ -89,6 +87,7 @@ class DummyDevice extends Device {
 		})
 		.send()
 		.on('progress', (progress) => {
+			console.log('Progress....');
 			const floatarr = new Float32Array(progress.length);
 			for(let i = 0; i < progress.length; i++) {
 				floatarr[i] = progress.data[i];
