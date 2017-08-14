@@ -1,7 +1,7 @@
 <template>
   <v-container fluid grid-list-md class="grey lighten-4">
-    <v-layout wrap row v-for="(devices,index) in devicesByColumns(devices,2)" :key="index">
-        <v-flex md3 v-for="(device,index) in devices" key="device.serialNumber">
+    <v-layout wrap row justify-center v-for="(devices,index) in devicesByColumns(devices,2)" :key="index">
+        <v-flex md3 v-for="(device,index) in devices" :key="device.serialNumber">
           <v-card>
             <v-card-media class="white--text device-img" v-if="device.type=='rtlsdr'" height="200px" src="static/img/rtlsdrv3.jpg">
                 <v-container fill-height fluid>

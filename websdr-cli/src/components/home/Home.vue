@@ -1,6 +1,6 @@
 <template>
     <div>
-    	<wizard v-if="devices.lengh==0" v-on:completed="wizardCompleted()"></wizard>
+      <wizard v-if="devices.length==0" v-on:completed="wizardCompleted()"></wizard>
       <devices v-if="devices.length>0" :devices="devices"></devices>
     </div>
 </template>

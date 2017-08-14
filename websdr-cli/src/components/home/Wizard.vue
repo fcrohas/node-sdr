@@ -1,44 +1,49 @@
 <template>
-  <md-layout class="spacing">
-    <md-layout md-hide-medium></md-layout>
-    <md-layout>
-    	<md-stepper md-alternate-labels @completed="onSave()">
-    	  <md-step md-label="Plugin device" md-icon="usb" :md-continue="devicesDetected">
-    	  <md-layout md-align="center" md-gutter="16">
-      		<md-layout md-flex="35">
-    		    <p class="text"><span>Plug your device then press detect.</span>
-    		    <md-button class="valign md-raised" @click="getDeviceList()">DETECT</md-button>
-    		    </p>
-      		</md-layout>
-      	  </md-layout>
-    	  </md-step>
-    	  <md-step md-label="Select" :md-continue="isSelected">
-    		  <md-layout md-align="center" md-gutter="40">
-    	  		<md-layout md-flex="35">
-    			    <p>Please select devices you want to use.</p>
-    			</md-layout>
-    		  </md-layout>
-    		  <md-layout md-align="center" md-gutter="40">
-    	  		<md-layout md-flex="35">
-    			    <md-list>
-    				    <md-list-item v-for="(device, key) in devices" @click="device.selected=!device.selected" key="device.serialNumber">
-    				    	<md-icon>usb</md-icon> <span>{{device.serialNumber}} - {{device.manufacturer}} {{device.deviceName}} {{device.productName}}</span><md-icon class="green" v-if="device.selected">check_circle</md-icon>
-    				    </md-list-item>
-    			    </md-list>
-    			</md-layout>
-    		  </md-layout>
-    	  </md-step>
-    	  <md-step md-label="Save" :md-editable="true">
-    	    <p>This seems something important I need to fix just right before the last step.</p>
-    	  </md-step>
-    	</md-stepper>
-        <md-snackbar :md-position="'top center'" ref="snackbar" :md-duration="5000">
-            <span>{{errors.join('.')}}</span>
-            <md-button class="md-accent" md-theme="light-blue" @click="clearErrors()">Retry</md-button>
-        </md-snackbar>    
-      </md-layout>
-      <md-layout md-hide-medium></md-layout>
-    </md-layout>
+  <v-container fluid>
+      <v-layout wrap column justify-center>
+        <v-flex offset-md4 md4>
+          <v-stepper v-model="stepperValue">
+            <v-stepper-header>
+              <v-stepper-step step="1" :complete="stepperValue > 1">Plug</v-stepper-step>
+              <v-divider></v-divider>
+              <v-stepper-step step="2" :complete="stepperValue > 2">Select</v-stepper-step>
+              <v-divider></v-divider>
+              <v-stepper-step step="3">Save</v-stepper-step>
+            </v-stepper-header>
+            <v-stepper-content step="1">
+                <v-btn primary @click="getDeviceList()" >Continue</v-btn>
+            </v-stepper-content>
+            <v-stepper-content step="2">
+                <v-list v-if="stepperValue==2" three-line>
+                    <template>
+                        <v-list-tile avatar v-for="(device, key) in devices" @click="device.selected=!device.selected" :key="device.serialNumber">
+                          <v-list-tile-avatar>
+                            <v-icon>usb</v-icon>
+                          </v-list-tile-avatar>
+                          <v-list-tile-content>
+                            <v-list-tile-title>{{device.deviceName}} - {{device.productName}}</v-list-tile-title>
+                            <v-list-tile-sub-title>{{device.manufacturer}}</v-list-tile-sub-title>
+                          </v-list-tile-content>
+                          <v-list-tile-action>
+                            <v-icon v-if="device.selected">check_circle</v-icon>
+                          </v-list-tile-action>
+                        </v-list-tile>
+                    </template>
+                </v-list>
+                <v-btn primary @click="stepperValue = 3" >Continue</v-btn>
+                <v-btn primary @click="stepperValue = 1" >Cancel</v-btn>
+            </v-stepper-content>
+            <v-stepper-content step="3">
+                <v-btn primary @click="onSave()" >Save</v-btn>
+            </v-stepper-content>
+          </v-stepper>
+            <v-snackbar :top="true" :left="false" :bottom="false" :right="false" v-model="errors.length" :timeout="5000" :multi-line="false" :vertical="false">
+                <span>{{errors.join('.')}}</span>
+                <v-button flat class="white--text" @click.native="clearErrors()">Retry</v-button>
+            </v-snackbar>           
+        </v-flex>
+      </v-layout>
+  </v-container>
 </template>
 
 <script>
@@ -51,6 +56,7 @@ export default {
   },
   data () {
     return {
+      stepperValue: 1,
       devices: [],
       errors: [],
       devicesDetected: false
@@ -65,11 +71,13 @@ export default {
           device.inUse = false
           return device
         })
-        this.devicesDetected = this.devices.length > 0
+        if (this.devices.length > 0) {
+          this.stepperValue += 1
+        }
       }).catch(e => {
         this.errors.push(e)
         this.devicesDetected = false
-        this.$refs.snackbar.open()
+        this.stepperValue = 1
       })
     },
     onSave: function () {

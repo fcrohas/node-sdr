@@ -1,20 +1,20 @@
 <template>
-  <v-app standalone>
-    <v-toolbar class="blue" dark>
+  <v-app toolbar footer>
+    <main-menu :display="displayMenu"></main-menu>
+    <v-toolbar class="indigo" dark>
       <v-toolbar-title>
         <v-toolbar-side-icon @click.stop="displayMenu = !displayMenu"></v-toolbar-side-icon>
-        <v-icon dark>home</v-icon>
       </v-toolbar-title>
       <v-spacer></v-spacer>
       <v-text-field label="Search..." single-line append-icon="search" dark hide-details></v-text-field>
     </v-toolbar>
-    <main-menu :display="displayMenu"></main-menu>
     <main>
       <v-container fluid>
         <router-view></router-view>
       </v-container>
     </main>
-    <v-footer>
+    <v-footer class="indigo">
+      <span class="white--text">© 2017</span>
     </v-footer>
   </v-app>    
 </template>

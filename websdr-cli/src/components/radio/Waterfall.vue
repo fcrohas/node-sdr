@@ -9,6 +9,7 @@
         </v-flex>
         <v-flex xs12>
           <v-toolbar class="white" dense>
+            <v-slider prepend-icon="volume_up" min="0" max="100" v-model="level"></v-slider>
             <v-spacer></v-spacer>
             <v-btn icon @click="disconnect()">
               <v-icon>exit_to_app</v-icon>
@@ -55,7 +56,8 @@ export default {
       disconnected: false,
       bufferRGBA: null,
       imageFFT: null,
-      spectrumCtx: null
+      spectrumCtx: null,
+      level: 1
     }
   },
   methods: {
@@ -280,7 +282,7 @@ export default {
           // Convert buffer to RGBA
           for (let c = 0; c < line.length; c++) {
             // HSV
-            const color = this.HSVtoRGB(0.55 - (1 + buffer[c] / 100) / 2, 0.7, 0.8)
+            const color = this.HSVtoRGB(this.level / 100 - (1 + buffer[c] / 100) / 2, 0.7, 0.8)
             this.bufferRGBA.set([color.r, color.g, color.b, 255], c * 4)
           }
           this.reDraw()

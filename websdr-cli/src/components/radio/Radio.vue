@@ -2,10 +2,10 @@
 	<v-container fluid>
 		<v-layout fill-height>
 			<v-flex md12 fill-height>
-				<vue-draggable-resizable :parent="false" :resizable="true" :w="800" :h="400" :x="500" :y="500">
+				<vue-draggable-resizable :parent="false" :resizable="false" :draggable="false" :w="800" :h="400" :x="500" :y="500">
 					<waterfall></waterfall>
 				</vue-draggable-resizable>
-				<vue-draggable-resizable :parent="false" :resizable="true" :w="400" :h="300" :x="100" :y="100">
+				<vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="400" :h="300" :x="100" :y="100">
 					<control></control>
 				</vue-draggable-resizable>
 			</v-flex>
