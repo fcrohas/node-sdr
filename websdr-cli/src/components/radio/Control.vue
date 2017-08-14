@@ -1,36 +1,17 @@
 <template>
-  <md-card md-with-hover class="full-size">
-    <md-card-header>
-        <md-card-header-text>
-          <div class="md-title">Radio</div>
-          <div class="md-subhead">Type</div>
-        </md-card-header-text>
-
-        <md-menu md-size="4" md-direction="bottom left">
-          <md-button class="md-icon-button" md-menu-trigger>
-            <md-icon>more_vert</md-icon>
-          </md-button>
-
-          <md-menu-content>
-            <md-menu-item>
-              <span>Move</span>
-              <md-icon>zoom_out_map</md-icon>
-            </md-menu-item>
-          </md-menu-content>
-        </md-menu>
-      </md-card-header>        
-    <md-card-media>
-        <p>Tuner frequency : {{centerFrequency}} <button @click="changeCenterFrequency(10000)">+</button> / <button @click="changeCenterFrequency(-10000)">-</button></p>
-        <p>Frequency : {{tunedFrequency}}</p>
-        <p>Bandwidth : {{currentBandwidth}}</p>
-    </md-card-media>
-
-    <md-card-actions>
-      <md-button class="md-icon-button">
-        <md-icon>play</md-icon>
-      </md-button>
-    </md-card-actions>
-  </md-card>      
+  <v-container fluid>
+    <v-layout column>
+      <v-flex xs12 align-end flexbox>
+        <h4>Tuner frequency : {{centerFrequency}} <v-btn @click="changeCenterFrequency(10000)">+</v-btn> / <v-btn @click="changeCenterFrequency(-10000)">-</v-btn></h4>
+      </v-flex>
+      <v-flex xs12 align-end flexbox>
+        <h4>Frequency : {{tunedFrequency}}</h4>
+      </v-flex>
+      <v-flex xs12 align-end flexbox>
+        <h4>Bandwidth : {{currentBandwidth}}</h4>
+      </v-flex>
+    </v-layout>
+  </v-container>
 </template>
 
 <script>

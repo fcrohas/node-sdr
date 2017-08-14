@@ -1,39 +1,38 @@
 <template>
-    <md-layout md-gutter class="spacing">
-        <md-layout md-hide-medium></md-layout>
-        <md-layout>
-          <md-layout md-column v-for="(devices,index) in devicesByColumns(devices,2)">
-            <md-layout class="spacing" v-for="(device,index) in devices" key="device.serialNumber">
-              <md-card>
-                <md-card-media-cover md-solid>
-                  <md-card-media md-ratio="1:4">
-                    <img v-if="device.type=='rtlsdr'" src="static/img/rtlsdrv3.jpg" alt="Dongle generic">
-                  </md-card-media>
-                  <md-card-media md-ratio="1:4">
-                    <img v-if="device.type=='sdrplay'" src="static/img/SDRplay-RSP2.jpg" alt="SDRPlay">
-                  </md-card-media>
-
-                  <md-card-area>
-                    <md-card-header>
-                      <div class="md-title">{{device.deviceName}}</div>
-                      <div class="md-subhead">{{device.serialNumber}}</div>
-                    </md-card-header>
-
-                    <md-card-actions>
-                      <md-button @click="connect(device.serialNumber)">Connect</md-button>
-                    </md-card-actions>
-                  </md-card-area>
-                </md-card-media-cover>
-              </md-card>
-            </md-layout>
-          </md-layout>
-          <md-snackbar :md-position="'top center'" ref="snackbar" :md-duration="5000">
-              <span>{{errors.join('.')}}</span>
-              <md-button class="md-accent" md-theme="light-blue" @click="clearErrors()">Retry</md-button>
-          </md-snackbar>    
-        </md-layout>
-        <md-layout md-hide-medium></md-layout>
-    </md-layout>
+  <v-container fluid grid-list-md class="grey lighten-4">
+    <v-layout wrap row v-for="(devices,index) in devicesByColumns(devices,2)" :key="index">
+        <v-flex md3 v-for="(device,index) in devices" key="device.serialNumber">
+          <v-card>
+            <v-card-media class="white--text device-img" v-if="device.type=='rtlsdr'" height="200px" src="static/img/rtlsdrv3.jpg">
+                <v-container fill-height fluid>
+                  <v-layout fill-height>
+                    <v-flex xs12 align-end flexbox>
+                      <span class="headline white--text" v-text="device.deviceName"></span>
+                    </v-flex>
+                  </v-layout>
+                </v-container>              
+            </v-card-media>
+            <v-card-media class="white--text" v-if="device.type=='sdrplay'" height="200px" src="static/img/SDRplay-RSP2.jpg">
+                <v-container fill-height fluid>
+                  <v-layout fill-height>
+                    <v-flex xs12 align-end flexbox>
+                      <span class="headline white--text" v-text="device.deviceName"></span>
+                    </v-flex>
+                  </v-layout>
+                </v-container>              
+            </v-card-media>
+            <v-card-actions class="white">
+              <v-spacer></v-spacer>
+              <v-btn @click="connect(device.serialNumber)">Connect</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-flex>
+    </v-layout>
+    <v-snackbar :top="true" :left="false" :bottom="false" :right="false" v-model="errors.length" :timeout="5000" :multi-line="false" :vertical="false">
+        <span>{{errors.join('.')}}</span>
+        <v-button flat class="white--text" @click.native="clearErrors()">Retry</v-button>
+    </v-snackbar>   
+</v-container>
 </template>
 
 <script>
@@ -91,7 +90,4 @@ export default {
 </script>
 
 <style lang="css" scoped>
-.spacing {
-  padding:10px;
-}
 </style>

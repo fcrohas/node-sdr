@@ -1,37 +1,22 @@
 <template>
-  <md-card md-with-hover class="full-size">
-    <md-card-header>
-      <md-card-header-text>
-        <div class="md-title">Waterfall</div>
-        <div class="md-subhead">FFT size is {{bins}}</div>
-      </md-card-header-text>
-
-      <md-menu md-size="4" md-direction="bottom left">
-        <md-button class="md-icon-button" md-menu-trigger>
-          <md-icon>more_vert</md-icon>
-        </md-button>
-
-        <md-menu-content>
-          <md-menu-item>
-            <span>Move</span>
-            <md-icon>zoom_out_map</md-icon>
-          </md-menu-item>
-        </md-menu-content>
-      </md-menu>
-  </md-card-header>        
-    <md-card-media>
-      <div>
-        <canvas ref="spectrum" class="spectrum"></canvas>
-        <canvas ref="overlay" class="overlay"></canvas>
-      </div>
-    </md-card-media>
-
-    <md-card-actions>
-      <md-button class="md-icon-button" @click="disconnect()">
-        <md-icon>exit_to_app</md-icon>
-      </md-button>
-    </md-card-actions>
-  </md-card>      
+    <v-container fluid class="full-size">
+      <v-layout column class="full-size">
+        <v-flex xs12 class="full-size">
+          <div class="full-size">
+            <canvas ref="spectrum" class="spectrum"></canvas>
+            <canvas ref="overlay" class="freq-overlay"></canvas>
+          </div>
+        </v-flex>
+        <v-flex xs12>
+          <v-toolbar class="white" dense>
+            <v-spacer></v-spacer>
+            <v-btn icon @click="disconnect()">
+              <v-icon>exit_to_app</v-icon>
+            </v-btn>
+            </v-toolbar>
+        </v-flex>
+      </v-layout>
+    </v-container>
 </template>
 
 <script>
@@ -313,9 +298,23 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.header-size {
+  height: 90px;
+  max-height: 90px;
+  min-height: 90px;
+}
+.full-height {
+  height: 100%;
+}
+.full-size-90 {
+  width: 100%;
+  height: calc(100%-90px);
+  padding: 0px;
+}
 .full-size {
   width: 100%;
   height: 100%;
+  padding: 0px;
 }
 .spacing {
   padding : 15px;
@@ -328,14 +327,14 @@ export default {
   position: absolute;
   border:1px solid #BBB;
   width: 100%;
-  height: 600;
+  height: 100%;
   background: black;
   z-index: 0;
 }
-.overlay {
+.freq-overlay {
   position: absolute;
   width: 100%;
-  height: 600;
+  height: 100%;
   z-index: 1;
 }
 </style>

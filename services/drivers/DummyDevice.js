@@ -87,7 +87,6 @@ class DummyDevice extends Device {
 		})
 		.send()
 		.on('progress', (progress) => {
-			console.log('Progress....');
 			const floatarr = new Float32Array(progress.length);
 			for(let i = 0; i < progress.length; i++) {
 				floatarr[i] = progress.data[i];

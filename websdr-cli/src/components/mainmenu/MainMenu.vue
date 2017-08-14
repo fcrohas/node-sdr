@@ -1,19 +1,28 @@
 <template>
-  <md-sidenav class="md-left" ref="menu">
-    <md-toolbar class="md-large">
-      <div class="md-toolbar-container">
-        <h3 class="md-title">Navigation</h3>
-      </div>
-    </md-toolbar>
-    <md-list>
-      <md-list-item href="#/" @click="$refs.menu.toggle()">
-        <md-icon>home</md-icon> <span>Home</span>
-      </md-list-item>    
-	    <md-list-item href="#/spectrum" @click="$refs.menu.toggle()">
-	      <md-icon>equalizer</md-icon> <span>Band Spectrum</span>
-	    </md-list-item>    
-    </md-list>
-  </md-sidenav>
+    <v-navigation-drawer class="pb-0" persistent absolute height="100%" clipped enable-resize-watcher v-model="display">
+      <v-list dense>
+        <v-list-tile>
+          <v-list-tile-action>
+            <v-icon>home</v-icon>
+          </v-list-tile-action>
+          <v-list-tile-content>
+            <v-list-tile-title href="#/">
+              Home
+            </v-list-tile-title>
+          </v-list-tile-content>
+        </v-list-tile>
+        <v-list-tile>
+          <v-list-tile-action>
+            <v-icon>equalizer</v-icon>
+          </v-list-tile-action>
+          <v-list-tile-content>
+            <v-list-tile-title href="#/spectrum">
+              Band Spectrum
+            </v-list-tile-title>
+          </v-list-tile-content>
+        </v-list-tile>
+      </v-list>
+    </v-navigation-drawer>
 </template>
 
 <script>
@@ -28,17 +37,7 @@ export default {
     return {
 
     }
-  },
-  methods: {
-  },
-  watch: {
-    display () {
-      this.$refs.menu.toggle()
-    }
-  },
-  ready () {
   }
-
 }
 </script>
 

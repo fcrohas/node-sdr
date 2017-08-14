@@ -1,5 +1,5 @@
 import axios from 'axios'
 
 export default axios.create({
-  baseURL: 'http://localhost:3000/api'
+  baseURL: 'http://clifcr2:3000/api'
 })
