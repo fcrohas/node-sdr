@@ -8,7 +8,7 @@
 <script>
 import Wizard from './Wizard'
 import Devices from './Devices'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapActions } from 'vuex'
 
 export default {
   name: 'Home',
@@ -28,12 +28,15 @@ export default {
     }
   },
   methods: {
+    ...mapActions({
+      getAllDevices: 'getAllDevices'
+    }),
     wizardCompleted: function () {
-      this.$store.dispatch('getAllDevices')
+      this.getAllDevices()
     }
   },
   created () {
-    this.$store.dispatch('getAllDevices')
+    this.getAllDevices()
   }
 }
 </script>

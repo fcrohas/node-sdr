@@ -25,6 +25,21 @@ class Device {
 		this.gain = gain;
 	}
 
+	start() {
+
+	}
+
+	stop() {
+
+	}
+
+	listen() {
+
+	}
+
+	getCapabilities() {
+		return [];
+	}
 }
 
 module.exports = Device;

@@ -10,6 +10,9 @@
       <v-flex xs12 align-end flexbox>
         <h4>Bandwidth : {{currentBandwidth}}</h4>
       </v-flex>
+      <v-flex xs12 align-end flexbox v-for="capability in capabilities" :key="capability.name">
+        <p>{{capability.name}} -> {{capability.values}}</p>
+      </v-flex>
     </v-layout>
   </v-container>
 </template>
@@ -25,14 +28,19 @@ export default {
   computed: mapGetters({
     tunedFrequency: 'tunedFrequency',
     currentBandwidth: 'currentBandwidth',
-    centerFrequency: 'centerFrequency'
+    centerFrequency: 'centerFrequency',
+    capabilities: 'capabilities'
   }),
   methods: mapActions({
-    changeCenterFrequency: 'changeCenterFrequency'
+    changeCenterFrequency: 'changeCenterFrequency',
+    getCapabilities: 'getCapabilities'
   }),
   data () {
     return {
     }
+  },
+  mounted () {
+    this.getCapabilities()
   }
 }
 </script>

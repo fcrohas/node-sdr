@@ -11,7 +11,7 @@
           <v-toolbar class="white" dense>
             <v-slider prepend-icon="volume_up" min="0" max="100" v-model="level"></v-slider>
             <v-spacer></v-spacer>
-            <v-btn icon @click="disconnect()">
+            <v-btn icon @click="stop()">
               <v-icon>exit_to_app</v-icon>
             </v-btn>
             </v-toolbar>
@@ -40,7 +40,8 @@ export default {
   computed: mapGetters({
     tunedFrequency: 'tunedFrequency',
     currentBandwidth: 'currentBandwidth',
-    centerFrequency: 'centerFrequency'
+    centerFrequency: 'centerFrequency',
+    isConnected: 'isConnected'
   }),
   data () {
     return {
@@ -63,15 +64,13 @@ export default {
   methods: {
     ...mapActions([
       'changeFrequency',
-      'changeBandwidth'
+      'changeBandwidth',
+      'connect',
+      'disconnect'
     ]),
-    disconnect: function () {
+    stop: function () {
       // Close websocket
-      Websocket.emit('stop', 'disconnect', () => {
-        Websocket.offEvent('connect')
-        Websocket.offEvent('fft')
-        Websocket.close()
-      })
+      this.disconnect()
       // close device
       Service.get('/devices/close/' + this.serialNumber).then(response => {
         this.$router.push({path: '/'})
@@ -254,6 +253,9 @@ export default {
       this.bandwidth = this.currentBandwidth
     },
     tunedFrequency () {
+    },
+    isConnected (value) {
+      console.log(value)
     }
   },
   mounted: function () {
@@ -268,11 +270,12 @@ export default {
       this.drawOverlay(this.$refs.overlay, this.overlayPos)
       this.drawWaterfall(this.$refs.spectrum, this.fftdata)
       // Connect to socket serial number
-      Websocket.connect(this.$route.params.serialNumber)
-      Websocket.onceEvent('connect', () => {
-        // Start on connect
-        Websocket.emit('start', 'test')
-      })
+      this.connect(this.$route.params.serialNumber)
+      // Websocket.connect(this.$route.params.serialNumber)
+      // Websocket.onceEvent('connect', () => {
+      //   // Start on connect
+      //   Websocket.emit('start', 'test')
+      // })
       // Bind event data
       Websocket.onEvent('fft', (data) => {
         const buffer = new Int8Array(data)

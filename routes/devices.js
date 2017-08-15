@@ -69,11 +69,9 @@ router.get('/open/:serialNumber', function(req, res, next) {
 			console.log('Create initial room for device '+device.getSerial());
 			deviceChannels['/socket/device/' + device.getSerial()] = socketRouter.websocket.of('/socket/device/' + device.getSerial());
 			deviceChannels['/socket/device/' + device.getSerial()].on('connection', (socket) => {
-				// Message listener
+				// start device streaming
 				socket.on('start', (message) => {
 					console.log(socket.id + ' start *** ' + message);
-					device.setSampleRate(2048000);
-					device.setCenterFrequency(106100000);
 					device.start();
 					device.listen((data) => {
 						// Initialize one buffer feedback
@@ -83,7 +81,7 @@ router.get('/open/:serialNumber', function(req, res, next) {
 						// Chunk for fft
 						for (var i = 0; i < data.length; i += FFT_SIZE * 2) {
 							// fft size is 512 so double buffer
-							var truncData = data.slice(i, i + FFT_SIZE * 2);
+							var truncData = data.subarray(i, i + FFT_SIZE * 2);
 							// call fft
 							var fftdata = iqprocessor.doFft(truncData);
 							fftArray.set(fftdata, offset * fftdata.length);
@@ -97,15 +95,29 @@ router.get('/open/:serialNumber', function(req, res, next) {
 							arr8[i] = Math.round(fftArray[i]);
 						}
 						// invert FFTSIZE / 2
-						var halfup = arr8.slice(FFT_SIZE / 2);
+						var halfup = arr8.subarray(FFT_SIZE / 2);
 						var datareverse = new Int8Array(fftSize);
 						datareverse.set(halfup);
-						datareverse.set(arr8.slice(0, FFT_SIZE / 2), FFT_SIZE / 2);
+						datareverse.set(arr8.subarray(0, FFT_SIZE / 2), FFT_SIZE / 2);
 
 						socket.emit('fft',Buffer.from(datareverse.buffer));
 					});
 				});
-
+				//
+				socket.on('config', (messages, callback) => {
+					// Multiple command ?
+					let result = null;
+					for (let i = 0; i < messages.length; i++) {
+						switch(messages[i].type) {
+							case 'samplerate' : device.setSampleRate(messages[i].value); break;
+							case 'centerfrequency' : device.setCenterFrequency(messages[i].value); break;
+							case 'tunergain' : device.setGain(messages[i].value); break;
+							case 'capabilities' : result = device.getCapabilities(); break;
+						}
+					}
+					callback(result);
+				});
+				// Stop devic streaming
 				socket.on('stop', (message, callback) => {
 					console.log(socket.id + ' stop ***' + message + '***');
 					device.stop();

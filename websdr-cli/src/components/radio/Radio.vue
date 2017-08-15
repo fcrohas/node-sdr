@@ -14,12 +14,21 @@
 </template>
 
 <script>
+import { mapGetters, mapActions } from 'vuex'
 import Waterfall from './Waterfall'
 import Control from './Control'
 
 export default {
   name: 'Radio',
-  components: { Waterfall, Control }
+  components: { Waterfall, Control },
+  computed: mapGetters({
+    tunedFrequency: 'tunedFrequency',
+    currentBandwidth: 'currentBandwidth',
+    centerFrequency: 'centerFrequency'
+  }),
+  methods: mapActions({
+    changeCenterFrequency: 'changeCenterFrequency'
+  })
 }
 </script>
 
