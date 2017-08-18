@@ -30,7 +30,7 @@ export default {
   props: {
     sampleRate: {
       type: Number,
-      default: 2048000
+      default: 900001
     },
     frequency: {
       type: Number,
@@ -58,7 +58,7 @@ export default {
       bufferRGBA: null,
       imageFFT: null,
       spectrumCtx: null,
-      level: 1
+      level: 34
     }
   },
   methods: {

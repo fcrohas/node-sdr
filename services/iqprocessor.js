@@ -1,10 +1,18 @@
 const KissFFT = require('kissfft-js');
+const FIR = require('./radio/filters/fir');
+const Window = require('./radio/filters/window');
 
 class IQProcessor {
 
 	constructor(size) {
 		this.size = size;
 		this.fftr = new KissFFT.FFT(size);
+		this.order = 41;
+		this.window = new Window(this.order);
+		this.window.build(Window.hann);
+		this.fir = new FIR(900001, size + this.order);
+		this.fir.setWindow(this.window.get());
+		this.fir.buildLowpass(25000,this.order);
 	}
 
 	scaleTransform(trans, size) {
@@ -30,11 +38,14 @@ class IQProcessor {
 	doFft(dataarr) {
 		// Convert Int16Array to Float32Array
 		var transform = null;
+		var floatarr = null;
 		if (dataarr instanceof Float32Array) {
-			transform = this.fftr.forward(dataarr);
+			floatarr = dataarr;
 		} else {
-			transform = this.fftr.forward(this.intToFloat32(dataarr));
+			floatarr = this.intToFloat32(dataarr);
 		}
+		let filtered = this.fir.doFilter(floatarr);
+		transform = this.fftr.forward(filtered);
 		// compute magnitude with db log
 		var result = new Float32Array(this.size);
 		var j = 0;

@@ -47,22 +47,11 @@ class DummyDevice extends Device {
 	start() {
 		console.log('Device listener thread started.');
 		this.spawn = this.threads.spawn;
-		this.thread = this.spawn(function() {});
-	}
-
-	stop() {
-		console.log('Device listener thread stopped.');
-		if (this.thread != null) {
-			this.thread.kill();
-		}
-	}
-
-	listen(callback) {
-		this.thread.run((input, done, progress) => {
+		this.thread = this.spawn((input, done, progress) => {
 			this.fs = require('fs');
 			this.wavreader = require('node-wav');
 			while(1) {
-				let buffer = this.fs.readFileSync('./data/SDRSharp_20150804_204423Z_0Hz_IQ.wav');
+				let buffer = this.fs.readFileSync('./data/FM_HD_IQ.wav');
 				let result = this.wavreader.decode(buffer);	
 				let interleavedArr = new Float32Array(262144);
 				console.log('Reading wav file at rate='+result.sampleRate+' length='+result.channelData[0].length);
@@ -77,14 +66,25 @@ class DummyDevice extends Device {
 						c++;
 					}
 					progress({data :interleavedArr, length:interleavedArr.length});
-					var waitTill = new Date(new Date().getTime() + 100);
+/*					var waitTill = new Date(new Date().getTime() + 100);
 					while(waitTill > new Date()){}
-				}
+*/				}
 				console.log('Loop again ...');
 			}
 			console.log('End of streaming...');			
 			done();
-		})
+		});		
+	}
+
+	stop() {
+		console.log('Device listener thread stopped.');
+		if (this.thread != null) {
+			this.thread.kill();
+		}
+	}
+
+	listen(callback) {
+		this.thread
 		.send()
 		.on('progress', (progress) => {
 			const floatarr = new Float32Array(progress.length);
