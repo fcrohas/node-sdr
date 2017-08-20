@@ -43,6 +43,7 @@ class RTLSDRDevice extends Device {
 
 	open() {
 		this.device.open();
+		this.device.frequencyCoorection = 52;
 		// Update tunning range using tuner type
 		switch(this.device.tunerType) {
 			case 'R828D': this.tuningRange = '24000000-1766000000'; break;

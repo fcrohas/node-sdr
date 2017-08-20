@@ -30,11 +30,11 @@ export default {
   props: {
     sampleRate: {
       type: Number,
-      default: 900001
+      default: 2048000
     },
     frequency: {
       type: Number,
-      default: 106100000
+      default: 105800000
     }
   },
   computed: mapGetters({

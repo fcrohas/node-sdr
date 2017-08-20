@@ -6,13 +6,14 @@ class IQProcessor {
 
 	constructor(size) {
 		this.size = size;
+		this.sampleRate = 2048000;
 		this.fftr = new KissFFT.FFT(size);
-		this.order = 41;
+		this.order = 13;
 		this.window = new Window(this.order);
 		this.window.build(Window.hann);
-		this.fir = new FIR(900001, size + this.order);
-		this.fir.setWindow(this.window.get());
-		this.fir.buildLowpass(25000,this.order);
+		this.lpfir = new FIR(this.sampleRate, size + this.order);
+		this.lpfir.setWindow(this.window.get());
+		this.lpfir.buildLowpass(100000, this.order);
 	}
 
 	scaleTransform(trans, size) {
@@ -35,17 +36,28 @@ class IQProcessor {
 	    return output;
 	}
 
-	doFft(dataarr) {
-		// Convert Int16Array to Float32Array
-		var transform = null;
-		var floatarr = null;
-		if (dataarr instanceof Float32Array) {
-			floatarr = dataarr;
-		} else {
-			floatarr = this.intToFloat32(dataarr);
+	doDemodulate(floatarr) {
+		let xlatArr = new Float32Array(floatarr.length);
+		// Shift frequency
+		const wc0 = -2.0 * Math.PI * 50000 / this.sampleRate;
+		for (let i = 0; i < floatarr.length; i+=2) {
+			xlatArr[i] = floatarr[i] * Math.cos(wc0 * i) - floatarr[i + 1] * Math.sin(wc0* (i + 1));
+			xlatArr[i + 1] = floatarr[i + 1] * Math.sin(wc0 * (i + 1) ) + floatarr[i] * Math.cos(wc0 * i);
 		}
-		let filtered = this.fir.doFilter(floatarr);
-		transform = this.fftr.forward(filtered);
+		return xlatArr;
+		// Decimate
+		// let d = 0;
+		// for (let i = 0; i < floatarr.length; i+=8) {
+		// 	xlatArr[d] = floatarr[i];
+		// 	xlatArr[d + 1] = floatarr[i + 1];
+		// 	d = d + 2;
+		// }
+		// let lpfiltered = this.lpfir.doFilter(xlatArr);
+
+	}
+
+	doFft(floatarr) {
+		var transform = this.fftr.forward(floatarr);
 		// compute magnitude with db log
 		var result = new Float32Array(this.size);
 		var j = 0;
@@ -55,6 +67,17 @@ class IQProcessor {
 			j++;
 		}
 		return result;
+	}
+
+	doProcess(dataarr) {
+		// Convert Int16Array to Float32Array
+		var floatarr = null;
+		if (dataarr instanceof Float32Array) {
+			floatarr = dataarr;
+		} else {
+			floatarr = this.intToFloat32(dataarr);
+		}
+		return this.doFft(this.doDemodulate(floatarr));
 	}
 }
 

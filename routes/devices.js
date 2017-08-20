@@ -83,7 +83,7 @@ router.get('/open/:serialNumber', function(req, res, next) {
 							// fft size is 512 so double buffer
 							var truncData = data.subarray(i, i + FFT_SIZE * 2);
 							// call fft
-							var fftdata = iqprocessor.doFft(truncData);
+							var fftdata = iqprocessor.doProcess(truncData);
 							fftArray.set(fftdata, offset * fftdata.length);
 							fftSize += fftdata.length;
 							offset++;
