@@ -46,8 +46,8 @@ export default {
   data () {
     return {
       serialNumber: '',
-      bins: 4096,
-      width: 4096,
+      bins: 8192,
+      width: 8192,
       height: 600,
       bandwidth: 0,
       fftdata: {scale: 1 / 10000},
@@ -281,12 +281,12 @@ export default {
         const buffer = new Int8Array(data)
         // Split received buffer in bins
         for (let i = 0; i < buffer.length; i += this.bins) {
-          var line = buffer.slice(i, i + this.bins)
+          var line = buffer.subarray(i, i + this.bins)
           // Convert buffer to RGBA
           for (let c = 0; c < line.length; c++) {
             // HSV
-            const color = this.HSVtoRGB(this.level / 100 - (1 + buffer[c] / 100) / 2, 0.7, 0.8)
-            this.bufferRGBA.set([color.r, color.g, color.b, 255], c * 4)
+            const color = this.HSVtoRGB(this.level / 100 - (1 + line[c] / 100) / 2, 0.7, 0.8)
+            this.bufferRGBA.set([color.r, color.g, color.b, 255], c * 4 + this.bins * i)
           }
           this.reDraw()
         }

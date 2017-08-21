@@ -6,7 +6,7 @@ var deviceChannels = [];
 var node_config = process.env.NODE_ENV || 'development';
 var config = require('config-node')();
 var IQProcessor = require('../services/iqprocessor');
-var FFT_SIZE = 4096;
+var FFT_SIZE = 8192;
 var iqprocessor = new IQProcessor(FFT_SIZE);
 
 /* Wrapper object */
@@ -76,31 +76,17 @@ router.get('/open/:serialNumber', function(req, res, next) {
 					device.listen((data) => {
 						// Initialize one buffer feedback
 						var fftArray = new Float32Array(data.length);
-						var fftSize = 0;
-						var offset = 0;
+						var arr8 = new Int8Array(data.length / 2);
 						// Chunk for fft
 						for (var i = 0; i < data.length; i += FFT_SIZE * 2) {
 							// fft size is 512 so double buffer
 							var truncData = data.subarray(i, i + FFT_SIZE * 2);
 							// call fft
 							var fftdata = iqprocessor.doProcess(truncData);
-							fftArray.set(fftdata, offset * fftdata.length);
-							fftSize += fftdata.length;
-							offset++;
+							// store fft for this chunk
+							arr8.set(fftdata, i / 2);
 						}
-						// emit data
-						fftSize = fftSize / 4; // 32 bits -> 8 bits
-						var arr8 = new Int8Array(fftSize / 4);
-						for (var i=0; i < fftSize / 4; i++) {
-							arr8[i] = Math.round(fftArray[i]);
-						}
-						// invert FFTSIZE / 2
-						var halfup = arr8.subarray(FFT_SIZE / 2);
-						var datareverse = new Int8Array(fftSize);
-						datareverse.set(halfup);
-						datareverse.set(arr8.subarray(0, FFT_SIZE / 2), FFT_SIZE / 2);
-
-						socket.emit('fft',Buffer.from(datareverse.buffer));
+						socket.emit('fft',Buffer.from(arr8.buffer));							
 					});
 				});
 				//

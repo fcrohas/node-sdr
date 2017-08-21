@@ -2,10 +2,10 @@ Device = require('../device');
 
 class DummyDevice extends Device {
 
-	constructor(driver, rtldevice)	{
+	constructor(driver, dummydevice)	{
 		super();
 		this.driver = driver;
-		this.device = rtldevice;
+		this.device = dummydevice;
 		this.threads = require('threads');
 	}
 
@@ -51,9 +51,10 @@ class DummyDevice extends Device {
 			this.fs = require('fs');
 			this.wavreader = require('node-wav');
 			while(1) {
-				let buffer = this.fs.readFileSync('./data/FM_HD_IQ.wav');
+				let buffer = this.fs.readFileSync('./data/SDRSharp_20150804_204653Z_0Hz_IQ.wav');
 				let result = this.wavreader.decode(buffer);	
 				let interleavedArr = new Float32Array(262144);
+				//super.setSampleRate(result.sampleRate);
 				console.log('Reading wav file at rate='+result.sampleRate+' length='+result.channelData[0].length);
 				for(let i = 0; i < result.channelData[0].length; i += 131072) {
 					// interleave data
@@ -62,11 +63,11 @@ class DummyDevice extends Device {
 					let c=0;
 					for (let j = 0; j < 262144; j+=2) {
 						interleavedArr[j] = chunkI[c++];
-						interleavedArr[j + 1] = chunkQ[c++];
+						interleavedArr[j + 1] = 0;
 						c++;
 					}
 					progress({data :interleavedArr, length:interleavedArr.length});
-/*					var waitTill = new Date(new Date().getTime() + 100);
+/*					var waitTill = new Date(new Date().getTime() + 163);
 					while(waitTill > new Date()){}
 */				}
 				console.log('Loop again ...');

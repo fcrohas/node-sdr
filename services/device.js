@@ -17,6 +17,10 @@ class Device {
 		this.centerFrequency = frequency;
 	}
 
+	getSampleRate() {
+		return this.sampleRate;
+	}
+	
 	setSampleRate(rate) {
 		this.sampleRate = rate;
 	}

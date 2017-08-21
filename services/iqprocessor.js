@@ -9,6 +9,8 @@ class IQProcessor {
 		this.sampleRate = 2048000;
 		this.fftr = new KissFFT.FFT(size);
 		this.order = 13;
+		this.fftwindow = new Window(size);
+		this.fftwindow.build(Window.hann);
 		this.window = new Window(this.order);
 		this.window.build(Window.hann);
 		this.lpfir = new FIR(this.sampleRate, size + this.order);
@@ -59,11 +61,19 @@ class IQProcessor {
 	doFft(floatarr) {
 		var transform = this.fftr.forward(floatarr);
 		// compute magnitude with db log
-		var result = new Float32Array(this.size);
-		var j = 0;
+		let result = new Int8Array(this.size);
+		let j = 0;
+		var transformSize = transform.length / 2;
+		const halfFft = this.size / 2;
 		for (var i=0; i < transform.length; i += 2) {
-			var magnitude = Math.sqrt(transform[i] * transform[i] + transform[i+1] * transform[i+1])
-			result[j] = 20 * Math.log10(magnitude);
+			const magnitude = Math.sqrt(transform[i] * transform[i] + transform[i+1] * transform[i+1])
+			const log = 20 * Math.log10(magnitude);
+			// switch result here
+			if (i < transformSize) {
+				result[j + halfFft] = log;
+			} else {
+				result[j - halfFft] = log;
+			}
 			j++;
 		}
 		return result;
@@ -77,7 +87,7 @@ class IQProcessor {
 		} else {
 			floatarr = this.intToFloat32(dataarr);
 		}
-		return this.doFft(this.doDemodulate(floatarr));
+		return this.doFft(floatarr);
 	}
 }
 
