@@ -9,7 +9,8 @@ const state = {
   connected: false,
   opened: false,
   tunerGain: 241,
-  capabilities: []
+  capabilities: [],
+  modulation: 'FM'
 }
 
 const getters = {
@@ -18,7 +19,8 @@ const getters = {
   centerFrequency: state => state.centerFrequency,
   isConnected: state => state.connected,
   tunerGain: state => state.tunerGain,
-  capabilities: state => state.capabilities
+  capabilities: state => state.capabilities,
+  modulationType: state => state.modulation
 }
 
 const actions = {
@@ -26,6 +28,18 @@ const actions = {
     Websocket.connect(serialNumber)
     Websocket.onceEvent('connect', () => {
       Websocket.emit('config', [
+        {
+          type: 'modulation',
+          value: state.modulation
+        },
+        {
+          type: 'bandwidth',
+          value: state.bandwidth
+        },
+        {
+          type: 'frequency',
+          value: state.frequency
+        },
         {
           type: 'centerfrequency',
           value: state.centerFrequency
@@ -60,11 +74,20 @@ const actions = {
       commit(types.CENTERFREQUENCY_CHANGE, newCenterFrequency)
     })
   },
+  changeModulation ({ commit }, modulationType) {
+    Websocket.emit('config', [{ type: 'modulation', value: modulationType }], () => {
+      commit(types.MODULATION_CHANGE, modulationType)
+    })
+  },
   changeFrequency ({ commit }, frequency) {
-    commit(types.FREQUENCY_CHANGE, frequency)
+    Websocket.emit('config', [{ type: 'frequency', value: frequency }], () => {
+      commit(types.FREQUENCY_CHANGE, frequency)
+    })
   },
   changeBandwidth ({ commit }, bandwidth) {
-    commit(types.BANDWIDTH_CHANGE, bandwidth)
+    Websocket.emit('config', [{ type: 'bandwidth', value: bandwidth }], () => {
+      commit(types.BANDWIDTH_CHANGE, bandwidth)
+    })
   },
   getCapabilities ({ commit }) {
     Websocket.emit('config', [{type: 'capabilities'}], (capabilities) => {
@@ -82,6 +105,9 @@ const mutations = {
   },
   [types.CENTERFREQUENCY_CHANGE] (state, centerFrequency) {
     state.centerFrequency = centerFrequency
+  },
+  [types.MODULATION_CHANGE] (state, modulation) {
+    state.modulation = modulation
   },
   [types.POWER_CHANGE] (state, power) {
     state.connected = power

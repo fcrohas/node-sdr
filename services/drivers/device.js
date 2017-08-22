@@ -1,8 +1,17 @@
 class Device {
 	constructor() {
-		this.centerFrequency = 106100000;
+		this.centerFrequency = 105500000;
+		this.frequency = 106100000;
 		this.sampleRate = 2048000;
 		this.gain = 421;
+	}
+
+	static getDriverName() {
+		return 'interface';
+	}
+
+	static getDevices() {
+		return [];
 	}
 
 	open() {
@@ -13,6 +22,10 @@ class Device {
 		
 	}
 
+	setFrequency(frequency) {
+		this.frequency = frequency;
+	}
+
 	setCenterFrequency(frequency) {
 		this.centerFrequency = frequency;
 	}
@@ -20,7 +33,7 @@ class Device {
 	getSampleRate() {
 		return this.sampleRate;
 	}
-	
+
 	setSampleRate(rate) {
 		this.sampleRate = rate;
 	}

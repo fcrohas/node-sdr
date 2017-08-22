@@ -137,14 +137,14 @@ export default {
       const bwPix = this.bandwidth / binSize
       ctx.beginPath()
       // Draw frequency selection
-      ctx.lineWidth = '8'
+      ctx.lineWidth = '10'
       ctx.strokeStyle = 'red'
       ctx.moveTo(overlay.x, 28)
       ctx.lineTo(overlay.x, this.height - 88)
       ctx.stroke()
       // draw lower bandwidth
       ctx.beginPath()
-      ctx.lineWidth = '2'
+      ctx.lineWidth = '8'
       ctx.strokeStyle = 'white'
       ctx.moveTo(overlay.x - bwPix / 2, 28)
       ctx.lineTo(overlay.x - bwPix / 2, this.height - 88)

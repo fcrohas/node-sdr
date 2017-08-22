@@ -74,19 +74,18 @@ router.get('/open/:serialNumber', function(req, res, next) {
 					console.log(socket.id + ' start *** ' + message);
 					device.start();
 					device.listen((data) => {
-						// Initialize one buffer feedback
-						var fftArray = new Float32Array(data.length);
-						var arr8 = new Int8Array(data.length / 2);
-						// Chunk for fft
-						for (var i = 0; i < data.length; i += FFT_SIZE * 2) {
-							// fft size is 512 so double buffer
-							var truncData = data.subarray(i, i + FFT_SIZE * 2);
-							// call fft
-							var fftdata = iqprocessor.doProcess(truncData);
-							// store fft for this chunk
-							arr8.set(fftdata, i / 2);
+						let floatarr = iqprocessor.convertToFloat(data);						
+						// Process FFT
+						var fftOut = iqprocessor.doFFT(floatarr);
+						if (fftOut!=null) {
+							socket.emit('fft',Buffer.from(fftOut.buffer));
 						}
-						socket.emit('fft',Buffer.from(arr8.buffer));							
+
+						// Demodulate signal
+						if (iqprocessor.canDemodulate()) {
+							var pcmOut = iqprocessor.doDemodulate(floatarr);
+							socket.emit('pcm',Buffer.from(pcmOut.buffer));
+						}
 					});
 				});
 				//
@@ -95,10 +94,22 @@ router.get('/open/:serialNumber', function(req, res, next) {
 					let result = null;
 					for (let i = 0; i < messages.length; i++) {
 						switch(messages[i].type) {
-							case 'samplerate' : device.setSampleRate(messages[i].value); break;
-							case 'centerfrequency' : device.setCenterFrequency(messages[i].value); break;
+							case 'samplerate' : 
+									device.setSampleRate(messages[i].value);
+									iqprocessor.setSampleRate(messages[i].value);
+									break;
+							case 'centerfrequency' : 
+									device.setCenterFrequency(messages[i].value); 
+									iqprocessor.setCenterFrequency(messages[i].value); 
+								break;
 							case 'tunergain' : device.setGain(messages[i].value); break;
 							case 'capabilities' : result = device.getCapabilities(); break;
+							case 'modulation' : iqprocessor.setModulation(messages[i].value); break;
+							case 'bandwidth' : iqprocessor.setBandwidth(messages[i].value); break;
+							case 'frequency' : 
+									device.setFrequency(messages[i].value); 
+									iqprocessor.setFrequency(messages[i].value); 
+									break;
 						}
 					}
 					callback(result);

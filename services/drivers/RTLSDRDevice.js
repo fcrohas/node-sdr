@@ -1,4 +1,4 @@
-var Device = require('../device');
+var Device = require('./device');
 
 class RTLSDRDevice extends Device {
 

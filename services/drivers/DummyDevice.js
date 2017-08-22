@@ -1,4 +1,4 @@
-Device = require('../device');
+Device = require('./device');
 
 class DummyDevice extends Device {
 
@@ -62,9 +62,9 @@ class DummyDevice extends Device {
 					const chunkQ = result.channelData[0].subarray(i, i + 131072);
 					let c=0;
 					for (let j = 0; j < 262144; j+=2) {
-						interleavedArr[j] = chunkI[c++];
-						interleavedArr[j + 1] = 0;
-						c++;
+						interleavedArr[j] = chunkI[c];
+						interleavedArr[j + 1] = chunkQ[c+1];
+						c+=2;
 					}
 					progress({data :interleavedArr, length:interleavedArr.length});
 /*					var waitTill = new Date(new Date().getTime() + 163);
