@@ -1,5 +1,6 @@
 var express = require('express');
 var fs = require('fs');
+var wavEncoder = require('node-wav');
 var router = express.Router();
 var devices = [];
 var deviceChannels = [];
@@ -73,6 +74,8 @@ router.get('/open/:serialNumber', function(req, res, next) {
 				socket.on('start', (message) => {
 					console.log(socket.id + ' start *** ' + message);
 					device.start();
+					let fileoutput = new Int8Array(128000);
+					let fileSize = 0;
 					device.listen((data) => {
 						let floatarr = iqprocessor.convertToFloat(data);						
 						// Process FFT
@@ -80,11 +83,27 @@ router.get('/open/:serialNumber', function(req, res, next) {
 						if (fftOut!=null) {
 							socket.emit('fft',Buffer.from(fftOut.buffer));
 						}
-
 						// Demodulate signal
 						if (iqprocessor.canDemodulate()) {
 							var pcmOut = iqprocessor.doDemodulate(floatarr);
-							socket.emit('pcm',Buffer.from(pcmOut.buffer));
+							if (pcmOut != null) {
+								// write pcm to file when engouh data
+								console.log('size='+fileSize+' length='+fileoutput.length);
+								if (fileSize + pcmOut.length >= 128000) {
+									const wavdata = wavEncoder.encode(Buffer.from(fileoutput.buffer), {sampleRate:22050, float:false, bitDepth:8});
+									fs.writeFile('../data/test.wav', wavdata, "binary", (err) => {
+										if (err) {
+											console.log(err);
+										} else {
+											console.log('File saved !');
+										}
+									});
+								} else {
+									fileoutput.set(pcmOut, fileSize);
+									fileSize += pcmOut.length;
+								}
+								//socket.emit('pcm',Buffer.from(pcmOut.buffer));
+							}
 						}
 					});
 				});

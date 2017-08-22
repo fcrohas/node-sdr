@@ -286,7 +286,7 @@ export default {
           for (let c = 0; c < line.length; c++) {
             // HSV
             const color = this.HSVtoRGB(this.level / 100 - (1 + line[c] / 100) / 2, 0.7, 0.8)
-            this.bufferRGBA.set([color.r, color.g, color.b, 255], c * 4 + this.bins * i)
+            this.bufferRGBA.set([color.r, color.g, color.b, 255], c * 4)
           }
           this.reDraw()
         }

@@ -13,6 +13,7 @@ class IQProcessor {
 		this.demodulator = null;
 		this.size = size;
 		this.sampleRate = 2048000;
+		this.bandwidth = 150000;
 		this.fftr = new KissFFT.FFT(size);
 		this.order = 13;
 		this.fftwindow = new Window(size);
@@ -71,6 +72,7 @@ class IQProcessor {
 
 	setBandwidth(bandwidth) {
 		this.updateDemodulate = true;
+		this.bandwidth = bandwidth;
 		this.lpfir.buildLowpass(bandwidth / 2, this.order);
 		this.updateDemodulate = false;
 
@@ -94,6 +96,30 @@ class IQProcessor {
 		this.updateDemodulate = false;
 	}
 
+	doResample(pcmdata) {
+		const fast = this.bandwidth;
+		const slow = 22050;
+		let i = 0;
+		let i2 = 0;
+		let now_lpr = 0;
+		let prev_lpr_index = 0;
+		while( i < pcmdata.length) {
+			now_lpr += pcmdata[i];
+			i++;
+			prev_lpr_index += slow;
+			if (prev_lpr_index < fast) {
+				continue;
+			}
+			pcmdata[i2] = now_lpr / (fast/slow);
+			prev_lpr_index -= fast;
+			now_lpr = 0;
+			i2 += 1;
+		}
+		let resample = new Int8Array(i2);
+		resample.set(pcmdata.slice(0, i2));
+		return resample;
+	}
+
 	doDemodulate(floatarr) {
 		if (this.updateDemodulate) {
 			return null;
@@ -102,25 +128,32 @@ class IQProcessor {
 		// Shift frequency
 		const wc0 = -2.0 * Math.PI * (this.frequency  - this.centerFrequency) / this.sampleRate;
 		for (let i = 0; i < floatarr.length; i+=2) {
-			xlatArr[i] = floatarr[i] * Math.cos(wc0 * i) - floatarr[i + 1] * Math.sin(wc0* (i + 1));
-			xlatArr[i + 1] = floatarr[i + 1] * Math.sin(wc0 * (i + 1) ) + floatarr[i] * Math.cos(wc0 * i);
+			xlatArr[i] = floatarr[i] * Math.cos(wc0 * i) - floatarr[i + 1] * Math.sin(wc0* i);
+			xlatArr[i + 1] = floatarr[i + 1] * Math.sin(wc0 * i) + floatarr[i] * Math.cos(wc0 * i);
 		}
-		return xlatArr;
 		// Decimate
 		let d = 0;
-		for (let i = 0; i < floatarr.length; i+=8) {
-			xlatArr[d] = floatarr[i];
-			xlatArr[d + 1] = floatarr[i + 1];
+		// decimate to closer power of 2
+		let decim = 1 << 31 - Math.clz32(this.sampleRate / this.bandwidth);
+		for (let i = 0; i < xlatArr.length; i+=decim*2) {
+			xlatArr[d] = xlatArr[i];
+			xlatArr[d + 1] = xlatArr[i + 1];
 			d = d + 2;
 		}
-		let lpfiltered = this.lpfir.doFilter(xlatArr);
-		const floatResult = this.demodulator.demodulate(lpfiltered);
-		let arr8 = new Int8Array(floatResult.length);
-		for (let i = 0; i < floatResult.length; i++) {
-			arr8[i] = floatResult[i] * 255;
+		let demodArr = new Float32Array(d + 1);
+		let offset = 0;
+		for (var k = 0; k < d + 1; k += this.size * 2) {
+			var truncData = xlatArr.subarray(k, k + this.size * 2);
+			let lpfiltered = this.lpfir.doFilter(truncData);
+			const floatResult = this.demodulator.demodulate(lpfiltered);
+			demodArr.set(floatResult, offset);
+			offset += floatResult.length;			
 		}
-		return arr8;
-
+		let arr8 = new Int8Array(offset);
+		for (let i = 0; i < offset; i++) {
+			arr8[i] = demodArr[i] * 127;
+		}
+		return this.doResample(arr8);
 	}
 
 	doFFT(floatarr) {
