@@ -43,8 +43,8 @@ export default {
   data () {
     return {
       serialNumber: '',
-      bins: 8192,
-      width: 8192,
+      bins: 4096,
+      width: 4096,
       height: 600,
       fftdata: {scale: 1 / 10000},
       overlayPos: {x: 0, y: 0},

@@ -55,7 +55,7 @@ class SDRPlayDevice extends Device {
 	start() {
 		this.driver.RSPII_AntennaControl(1);
 		this.driver.RSPII_BiasTControl(1);
-		this.driver.StreamInit(58, this.sampleRate / 1000000, this.centerFrequency / 1000000,1536,0,2,28,0,128, (xibuffer,xqbuffer,firstSampleNum,grChanged,rfChanged,fsChanged,numSamples, reset) => {
+		this.driver.StreamInit(58, this.sampleRate / 1000000, this.centerFrequency / 1000000,1536,0,3,28,0,128, (xibuffer,xqbuffer,firstSampleNum,grChanged,rfChanged,fsChanged,numSamples, reset) => {
 			if (this.streamCallback != null) {
 				// Convert arraybuffedr to int16array as it is short
 				const xi = new Int16Array(xibuffer.buffer);

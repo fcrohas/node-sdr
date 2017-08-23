@@ -74,7 +74,7 @@ class RTLSDRDevice extends Device {
 		this.device.on('data', e => {
 			// Int8Array to int16array
 			// send it
-			callback(new Int16Array(e.buffer));
+			callback(new Int8Array(e.buffer));
 		});
 	}
 

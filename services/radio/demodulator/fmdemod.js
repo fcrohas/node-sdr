@@ -101,7 +101,7 @@ class FMDemod {
 
 		this.pre_r = pr;
 		this.pre_j = pj;
-		return result;
+		return this.deemph_filter(result);
 	}
 }
 

@@ -12,10 +12,10 @@ class IQProcessor {
 		this.updateFFT = false;
 		this.demodulator = null;
 		this.size = size;
-		this.sampleRate = 900001;
+		this.sampleRate = 2048000;
 		this.bandwidth = 150000;
 		this.fftr = new KissFFT.FFT(size);
-		this.order = 41;
+		this.order = 17;
 		this.fftwindow = new Window(size);
 		this.fftwindow.build(Window.hann);
 	}
@@ -39,7 +39,11 @@ class IQProcessor {
 		var output = new Float32Array(inputArray.length);
 	    for (var i = 0; i < inputArray.length; i++) {
 	        var int = inputArray[i];
-	        output[i] = int / maxvalue;
+	        if (int < 0) {
+	        	output[i] = int / maxvalue;
+	    	} else {
+	    		output[i] = int / (maxvalue - 1);
+	    	}
 	    }
 	    return output;
 	}
@@ -81,7 +85,7 @@ class IQProcessor {
 
 	setFrequency(frequency) {
 		this.updateDemodulate = true;
-		this.frequency = 0;
+		this.frequency = frequency;
 		this.updateDemodulate = false;
 	}
 
@@ -129,7 +133,7 @@ class IQProcessor {
 		const wc0 = -2.0 * Math.PI * (this.frequency  - this.centerFrequency) / this.sampleRate;
 		let sininc = 0;
 		for (let i = 0; i < floatarr.length; i+=2) {
-			if (this.frequency != 0) {
+			if (wc0 != 0) {
 				xlatArr[i] = floatarr[i] * Math.cos(wc0 * sininc) - floatarr[i + 1] * Math.sin(wc0* sininc);
 				xlatArr[i + 1] = floatarr[i + 1] * Math.cos(wc0 * sininc) + floatarr[i] * Math.sin(wc0 * sininc);
 				sininc++;
@@ -161,7 +165,8 @@ class IQProcessor {
 		for (let i = 0; i < offset; i++) {
 			arr8[i] = demodArr[i] * 2.0;
 		}
-*/		return this.demodulator.deemph_filter(this.doResample(demodArr.subarray(0,offset)));
+		//this.demodulator.deemph_filter();
+*/		return this.doResample(demodArr.subarray(0,offset));
 	}
 
 	doFFT(floatarr) {

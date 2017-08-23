@@ -7,7 +7,7 @@ var deviceChannels = [];
 var node_config = process.env.NODE_ENV || 'development';
 var config = require('config-node')();
 var IQProcessor = require('../services/iqprocessor');
-var FFT_SIZE = 8192;
+var FFT_SIZE = 4096;
 var iqprocessor = new IQProcessor(FFT_SIZE);
 
 /* Wrapper object */
