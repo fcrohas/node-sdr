@@ -28,10 +28,6 @@ import Service from '../../service/api'
 export default {
   name: 'waterfall',
   props: {
-    sampleRate: {
-      type: Number,
-      default: 2048000
-    },
     frequency: {
       type: Number,
       default: 105800000
@@ -41,7 +37,8 @@ export default {
     tunedFrequency: 'tunedFrequency',
     currentBandwidth: 'currentBandwidth',
     centerFrequency: 'centerFrequency',
-    isConnected: 'isConnected'
+    isConnected: 'isConnected',
+    sampleRate: 'sampleRate'
   }),
   data () {
     return {
@@ -49,7 +46,6 @@ export default {
       bins: 8192,
       width: 8192,
       height: 600,
-      bandwidth: 0,
       fftdata: {scale: 1 / 10000},
       overlayPos: {x: 0, y: 0},
       overlayCanvas: null,
@@ -134,7 +130,7 @@ export default {
       // compute binSize
       const binSize = this.sampleRate / this.bins
       // bandwidth in pixel
-      const bwPix = this.bandwidth / binSize
+      const bwPix = this.currentBandwidth / binSize
       ctx.beginPath()
       // Draw frequency selection
       ctx.lineWidth = '10'
@@ -166,8 +162,7 @@ export default {
     bandwidthChange: function (evt) {
       var e = window.event || evt // old IE support
       var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)))
-      this.bandwidth += delta * 5000
-      this.changeBandwidth(this.bandwidth)
+      this.changeBandwidth(this.currentBandwidth + delta * 5000)
     },
     drawOverlay: function (canvasElement, overlay) {
       // Get canvas context
@@ -249,9 +244,6 @@ export default {
     centerFrequency () {
       this.drawWaterfall(this.$refs.spectrum, this.fftdata)
     },
-    currentBandwidth () {
-      this.bandwidth = this.currentBandwidth
-    },
     tunedFrequency () {
     },
     isConnected (value) {
@@ -262,8 +254,6 @@ export default {
     if (this.$route.params != null) {
       // Prepare websocket connection
       this.serialNumber = this.$route.params.serialNumber
-      // initialize
-      this.bandwidth = this.currentBandwidth
       // Initial buffer
       this.bufferRGBA = new Uint8Array(this.width * 4)
       // Draw once connected

@@ -3,9 +3,9 @@ import Websocket from '../../service/websocket'
 
 const state = {
   frequency: 106100000,
-  bandwidth: 200000,
+  bandwidth: 192000,
   centerFrequency: 105500000,
-  sampleRate: 2048000,
+  sampleRate: 900001,
   connected: false,
   opened: false,
   tunerGain: 241,
@@ -20,7 +20,8 @@ const getters = {
   isConnected: state => state.connected,
   tunerGain: state => state.tunerGain,
   capabilities: state => state.capabilities,
-  modulationType: state => state.modulation
+  modulationType: state => state.modulation,
+  sampleRate: state => state.sampleRate
 }
 
 const actions = {
@@ -93,6 +94,9 @@ const actions = {
     Websocket.emit('config', [{type: 'capabilities'}], (capabilities) => {
       commit(types.RECEIVE_CAPABILITIES, capabilities)
     })
+  },
+  changeSampleRate ({ commit }, samplerate) {
+    commit(types.SAMPLERATE_CHANGE, samplerate)
   }
 }
 
@@ -114,6 +118,9 @@ const mutations = {
   },
   [types.RECEIVE_CAPABILITIES] (state, capabilities) {
     state.capabilities = capabilities
+  },
+  [types.SAMPLERATE_CHANGE] (state, sampleRate) {
+    state.sampleRate = sampleRate
   }
 }
 

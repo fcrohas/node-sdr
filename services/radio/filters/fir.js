@@ -128,10 +128,10 @@ class FIR {
 		this.buffer.set(input, this.fir.length);
 		for (let n = 0; n < input.length; n += 2) {
 			let inputp = this.buffer.subarray(n , n + this.fir.length);
-			inputp = inputp.reverse();
+/*			inputp = inputp.reverse();*/
 			for (let k = 0; k < this.fir.length; k+=2) {
 				output[n] += this.fir[k] * inputp[k] - this.fir[k + 1] * inputp[k + 1];
-				output[n + 1] += this.fir[k + 1] * inputp[k + 1] + this.fir[k] * inputp[k];
+				output[n + 1] += this.fir[k] * inputp[k + 1] + this.fir[k + 1] * inputp[k];
 			}
 		}
 		this.buffer.set(input.slice(input.length - this.fir.length));

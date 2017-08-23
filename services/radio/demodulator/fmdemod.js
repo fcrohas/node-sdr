@@ -3,7 +3,10 @@ class FMDemod {
 	constructor(mode) {
 		this.pre_r = 0;
 		this.pre_j = 0;
+		this.avg = 0;
 		this.discriminant = null;
+		this.deemph_a =1.0/((1.0-Math.exp(-1.0/(22050 * 75e-6))));
+		console.log(this.deemph_a);
 		switch(mode) {
 			case 0 : this.discriminant = this.polar_disc_fast; break;
 			case 1 : this.discriminant = this.polar_discriminant; break;
@@ -51,7 +54,7 @@ class FMDemod {
 
 	polar_discriminant(ar, aj, br, bj)
 	{
-		const comlpex = this.multiply(ar, aj, br, -bj);
+		const complex = this.multiply(ar, aj, br, -bj);
 		const angle = Math.atan2(complex.cj, complex.cr);
 		return angle / Math.PI;
 	}
@@ -65,8 +68,25 @@ class FMDemod {
 
 	polar_disc_fast(ar, aj, br, bj) {
 		const complex = this.multiply(ar, aj, br, -bj);
-		return this.fast_atan2(complex);
+		return this.fast_atan2(complex.cj, complex.cr);
 
+	}
+
+	deemph_filter(pcm)
+	{
+		let d = 0;
+		// de-emph IIR
+		// avg = avg * (1 - alpha) + sample * alpha;
+		for (let i = 0; i < pcm.length; i++) {
+			d = pcm[i] - this.avg;
+			if (d > 0) {
+				this.avg = this.avg + (d + this.deemph_a/2.0)/this.deemph_a;
+			} else {
+				this.avg = this.avg + (d - this.deemph_a/2.0)/this.deemph_a;
+			}
+			pcm[i] = this.avg;
+		}
+		return pcm;
 	}
 
 	demodulate(buffer) {

@@ -74,30 +74,34 @@ router.get('/open/:serialNumber', function(req, res, next) {
 				socket.on('start', (message) => {
 					console.log(socket.id + ' start *** ' + message);
 					device.start();
-					let fileoutput = new Int8Array(128000);
+					let fileoutput = new Float32Array(258000);
 					let fileSize = 0;
+					let saved = false;
 					device.listen((data) => {
 						let floatarr = iqprocessor.convertToFloat(data);						
 						// Process FFT
 						var fftOut = iqprocessor.doFFT(floatarr);
-						if (fftOut!=null) {
+						if (fftOut != null) {
 							socket.emit('fft',Buffer.from(fftOut.buffer));
 						}
 						// Demodulate signal
 						if (iqprocessor.canDemodulate()) {
 							var pcmOut = iqprocessor.doDemodulate(floatarr);
-							if (pcmOut != null) {
+							if ((pcmOut != null) && (!saved)) {
 								// write pcm to file when engouh data
 								console.log('size='+fileSize+' length='+fileoutput.length);
-								if (fileSize + pcmOut.length >= 128000) {
-									const wavdata = wavEncoder.encode(Buffer.from(fileoutput.buffer), {sampleRate:22050, float:false, bitDepth:8});
-									fs.writeFile('../data/test.wav', wavdata, "binary", (err) => {
+								if (fileSize + pcmOut.length >= 234403) {
+									let audioData = new Array(1);
+									audioData[0] = fileoutput;
+									const wavdata = wavEncoder.encode(audioData, {sampleRate:22050, float:true, bitDepth:32});
+									fs.writeFile('./data/test.wav', Buffer.from(wavdata), (err) => {
 										if (err) {
 											console.log(err);
 										} else {
 											console.log('File saved !');
 										}
 									});
+									saved = true;
 								} else {
 									fileoutput.set(pcmOut, fileSize);
 									fileSize += pcmOut.length;

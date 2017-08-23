@@ -12,16 +12,12 @@ class IQProcessor {
 		this.updateFFT = false;
 		this.demodulator = null;
 		this.size = size;
-		this.sampleRate = 2048000;
+		this.sampleRate = 900001;
 		this.bandwidth = 150000;
 		this.fftr = new KissFFT.FFT(size);
-		this.order = 13;
+		this.order = 41;
 		this.fftwindow = new Window(size);
 		this.fftwindow.build(Window.hann);
-		this.window = new Window(this.order);
-		this.window.build(Window.hann);
-		this.lpfir = new FIR(this.sampleRate, size + this.order);
-		this.lpfir.setWindow(this.window.get());
 	}
 
 	canDemodulate() {
@@ -62,7 +58,7 @@ class IQProcessor {
 	setModulation(modulation) {
 		this.updateDemodulate = true;
 		switch(modulation) {
-			case 'FM' : this.demodulator = new FMDemod(0); break;
+			case 'FM' : this.demodulator = new FMDemod(1); break;
 			case 'AM' : this.demodulator = new AMDemod(0); break;
 			case 'USB' : this.demodulator = new SSBDemod('USB'); break;
 			case 'LSB' : this.demodulator = new SSBDemod('LSB'); break;
@@ -73,14 +69,19 @@ class IQProcessor {
 	setBandwidth(bandwidth) {
 		this.updateDemodulate = true;
 		this.bandwidth = bandwidth;
-		this.lpfir.buildLowpass(bandwidth / 2, this.order);
+		this.window = new Window(this.order);
+		this.window.build(Window.blackman);
+		let decim = 1 << 31 - Math.clz32(this.sampleRate / this.bandwidth);
+		this.lpfir = new FIR(this.sampleRate / decim, this.size + this.order);
+		this.lpfir.setWindow(this.window.get());
+		this.lpfir.buildLowpass( bandwidth / 2, this.order);
 		this.updateDemodulate = false;
 
 	}
 
 	setFrequency(frequency) {
 		this.updateDemodulate = true;
-		this.frequency = frequency;
+		this.frequency = 0;
 		this.updateDemodulate = false;
 	}
 
@@ -97,7 +98,8 @@ class IQProcessor {
 	}
 
 	doResample(pcmdata) {
-		const fast = this.bandwidth;
+		let decim = 1 << 31 - Math.clz32(this.sampleRate / this.bandwidth);
+		const fast = this.sampleRate / decim;
 		const slow = 22050;
 		let i = 0;
 		let i2 = 0;
@@ -115,9 +117,7 @@ class IQProcessor {
 			now_lpr = 0;
 			i2 += 1;
 		}
-		let resample = new Int8Array(i2);
-		resample.set(pcmdata.slice(0, i2));
-		return resample;
+		return pcmdata.slice(0, i2);
 	}
 
 	doDemodulate(floatarr) {
@@ -125,12 +125,20 @@ class IQProcessor {
 			return null;
 		}
 		let xlatArr = new Float32Array(floatarr.length);
-		// Shift frequency
+		// translate if required
 		const wc0 = -2.0 * Math.PI * (this.frequency  - this.centerFrequency) / this.sampleRate;
+		let sininc = 0;
 		for (let i = 0; i < floatarr.length; i+=2) {
-			xlatArr[i] = floatarr[i] * Math.cos(wc0 * i) - floatarr[i + 1] * Math.sin(wc0* i);
-			xlatArr[i + 1] = floatarr[i + 1] * Math.sin(wc0 * i) + floatarr[i] * Math.cos(wc0 * i);
+			if (this.frequency != 0) {
+				xlatArr[i] = floatarr[i] * Math.cos(wc0 * sininc) - floatarr[i + 1] * Math.sin(wc0* sininc);
+				xlatArr[i + 1] = floatarr[i + 1] * Math.cos(wc0 * sininc) + floatarr[i] * Math.sin(wc0 * sininc);
+				sininc++;
+			} else {
+				xlatArr[i] = floatarr[i];
+				xlatArr[i + 1] = floatarr[i + 1];
+			}
 		}
+
 		// Decimate
 		let d = 0;
 		// decimate to closer power of 2
@@ -140,20 +148,20 @@ class IQProcessor {
 			xlatArr[d + 1] = xlatArr[i + 1];
 			d = d + 2;
 		}
-		let demodArr = new Float32Array(d + 1);
+		let demodArr = new Float32Array(d);
 		let offset = 0;
-		for (var k = 0; k < d + 1; k += this.size * 2) {
+		for (var k = 0; k < d; k += this.size * 2) {
 			var truncData = xlatArr.subarray(k, k + this.size * 2);
 			let lpfiltered = this.lpfir.doFilter(truncData);
 			const floatResult = this.demodulator.demodulate(lpfiltered);
 			demodArr.set(floatResult, offset);
 			offset += floatResult.length;			
 		}
-		let arr8 = new Int8Array(offset);
+/*		let arr8 = new Int8Array(offset);
 		for (let i = 0; i < offset; i++) {
-			arr8[i] = demodArr[i] * 127;
+			arr8[i] = demodArr[i] * 2.0;
 		}
-		return this.doResample(arr8);
+*/		return this.demodulator.deemph_filter(this.doResample(demodArr.subarray(0,offset)));
 	}
 
 	doFFT(floatarr) {

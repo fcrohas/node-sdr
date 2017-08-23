@@ -51,20 +51,20 @@ class DummyDevice extends Device {
 			this.fs = require('fs');
 			this.wavreader = require('node-wav');
 			while(1) {
-				let buffer = this.fs.readFileSync('./data/SDRSharp_20150804_204653Z_0Hz_IQ.wav');
+				let buffer = this.fs.readFileSync('./data/FM_HD_IQ.wav');
 				let result = this.wavreader.decode(buffer);	
 				let interleavedArr = new Float32Array(262144);
 				//super.setSampleRate(result.sampleRate);
 				console.log('Reading wav file at rate='+result.sampleRate+' length='+result.channelData[0].length);
 				for(let i = 0; i < result.channelData[0].length; i += 131072) {
 					// interleave data
-					const chunkI = result.channelData[1].subarray(i, i + 131072);
-					const chunkQ = result.channelData[0].subarray(i, i + 131072);
+					const chunkI = result.channelData[0].subarray(i, i + 131072);
+					const chunkQ = result.channelData[1].subarray(i, i + 131072);
 					let c=0;
 					for (let j = 0; j < 262144; j+=2) {
 						interleavedArr[j] = chunkI[c];
-						interleavedArr[j + 1] = chunkQ[c+1];
-						c+=2;
+						interleavedArr[j + 1] = chunkQ[c];
+						c++;
 					}
 					progress({data :interleavedArr, length:interleavedArr.length});
 /*					var waitTill = new Date(new Date().getTime() + 163);
