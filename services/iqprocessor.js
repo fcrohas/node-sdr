@@ -15,9 +15,13 @@ class IQProcessor {
 		this.sampleRate = 2048000;
 		this.bandwidth = 150000;
 		this.fftr = new KissFFT.FFT(size);
-		this.order = 17;
+		this.order = 27;
 		this.fftwindow = new Window(size);
 		this.fftwindow.build(Window.hann);
+		this.audiofilter = new FIR(22050, this.size + this.order);
+		this.audiofilter.setWindow(this.fftwindow.get());
+		this.audiofilter.buildLowpass( 11025, this.order);
+
 	}
 
 	canDemodulate() {
@@ -62,7 +66,7 @@ class IQProcessor {
 	setModulation(modulation) {
 		this.updateDemodulate = true;
 		switch(modulation) {
-			case 'FM' : this.demodulator = new FMDemod(1); break;
+			case 'FM' : this.demodulator = new FMDemod(2); break;
 			case 'AM' : this.demodulator = new AMDemod(0); break;
 			case 'USB' : this.demodulator = new SSBDemod('USB'); break;
 			case 'LSB' : this.demodulator = new SSBDemod('LSB'); break;
@@ -74,11 +78,11 @@ class IQProcessor {
 		this.updateDemodulate = true;
 		this.bandwidth = bandwidth;
 		this.window = new Window(this.order);
-		this.window.build(Window.blackman);
+		this.window.build(Window.blackmanharris);
 		let decim = 1 << 31 - Math.clz32(this.sampleRate / this.bandwidth);
 		this.lpfir = new FIR(this.sampleRate / decim, this.size + this.order);
 		this.lpfir.setWindow(this.window.get());
-		this.lpfir.buildLowpass( bandwidth / 2, this.order);
+		this.lpfir.buildLowpass( this.bandwidth / 2, this.order);
 		this.updateDemodulate = false;
 
 	}
@@ -145,16 +149,28 @@ class IQProcessor {
 
 		// Decimate
 		let d = 0;
+		let d2 = 0;
 		// decimate to closer power of 2
 		let decim = 1 << 31 - Math.clz32(this.sampleRate / this.bandwidth);
-		for (let i = 0; i < xlatArr.length; i+=decim*2) {
-			xlatArr[d] = xlatArr[i];
-			xlatArr[d + 1] = xlatArr[i + 1];
+		let prev_index = 0;
+		let now_r = 0;
+		let now_j = 0;
+		while (d < xlatArr.length) {
+			now_r += xlatArr[d];
+			now_j += xlatArr[d + 1];
 			d = d + 2;
+			prev_index++;
+			if (prev_index < decim) continue;
+			xlatArr[d2] = now_r;
+			xlatArr[d2 + 1] = now_j;
+			prev_index = 0;
+			now_r = 0;
+			now_j = 0;
+			d2+=2;
 		}
-		let demodArr = new Float32Array(d);
+		let demodArr = new Float32Array(d2);
 		let offset = 0;
-		for (var k = 0; k < d; k += this.size * 2) {
+		for (var k = 0; k < d2; k += this.size * 2) {
 			var truncData = xlatArr.subarray(k, k + this.size * 2);
 			let lpfiltered = this.lpfir.doFilter(truncData);
 			const floatResult = this.demodulator.demodulate(lpfiltered);
@@ -166,7 +182,14 @@ class IQProcessor {
 			arr8[i] = demodArr[i] * 2.0;
 		}
 		//this.demodulator.deemph_filter();
-*/		return this.doResample(demodArr.subarray(0,offset));
+*/		
+		let resample = this.doResample(demodArr.subarray(0,offset));
+		let filtered = new Float32Array(resample.length);
+		for (var f = 0; f < resample.length; f += this.size) {
+			var truncData = resample.subarray(f, f + this.size);
+			filtered.set(this.audiofilter.doFilterReal(truncData), f);
+		}
+		return filtered;
 	}
 
 	doFFT(floatarr) {

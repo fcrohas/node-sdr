@@ -5,7 +5,7 @@ const state = {
   frequency: 106100000,
   bandwidth: 170000,
   centerFrequency: 106100000,
-  sampleRate: 2048000,
+  sampleRate: 900001,
   connected: false,
   opened: false,
   tunerGain: 241,

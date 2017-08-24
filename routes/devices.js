@@ -89,8 +89,8 @@ router.get('/open/:serialNumber', function(req, res, next) {
 							var pcmOut = iqprocessor.doDemodulate(floatarr);
 							if ((pcmOut != null) && (!saved)) {
 								// write pcm to file when engouh data
-								console.log('size='+fileSize+' length='+fileoutput.length);
-								if (fileSize + pcmOut.length >= 234403) {
+								/*console.log('size='+fileSize+' length='+fileoutput.length);*/
+								if (fileSize + pcmOut.length >= 258000) {
 									let audioData = new Array(1);
 									audioData[0] = fileoutput;
 									const wavdata = wavEncoder.encode(audioData, {sampleRate:22050, float:true, bitDepth:32});

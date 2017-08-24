@@ -50,10 +50,10 @@ class DummyDevice extends Device {
 		this.thread = this.spawn((input, done, progress) => {
 			this.fs = require('fs');
 			this.wavreader = require('node-wav');
+			let buffer = this.fs.readFileSync('./data/FM_HD_IQ.wav');
+			let result = this.wavreader.decode(buffer);	
+			let interleavedArr = new Float32Array(262144);
 			while(1) {
-				let buffer = this.fs.readFileSync('./data/FM_HD_IQ.wav');
-				let result = this.wavreader.decode(buffer);	
-				let interleavedArr = new Float32Array(262144);
 				//super.setSampleRate(result.sampleRate);
 				console.log('Reading wav file at rate='+result.sampleRate+' length='+result.channelData[0].length);
 				for(let i = 0; i < result.channelData[0].length; i += 131072) {
@@ -67,9 +67,9 @@ class DummyDevice extends Device {
 						c++;
 					}
 					progress({data :interleavedArr, length:interleavedArr.length});
-/*					var waitTill = new Date(new Date().getTime() + 163);
+					var waitTill = new Date(new Date().getTime() + 103);
 					while(waitTill > new Date()){}
-*/				}
+				}
 				console.log('Loop again ...');
 			}
 			console.log('End of streaming...');			

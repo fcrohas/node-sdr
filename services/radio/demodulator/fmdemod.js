@@ -4,8 +4,9 @@ class FMDemod {
 		this.pre_r = 0;
 		this.pre_j = 0;
 		this.avg = 0;
+		this.dc_avg = 0;
 		this.discriminant = null;
-		this.deemph_a =1.0/((1.0-Math.exp(-1.0/(22050 * 75e-6))));
+		this.deemph_a = Math.round(1.0/((1.0-Math.exp(-1.0/(22050 * 75e-6)))));
 		console.log(this.deemph_a);
 		switch(mode) {
 			case 0 : this.discriminant = this.polar_disc_fast; break;
@@ -68,7 +69,7 @@ class FMDemod {
 
 	polar_disc_fast(ar, aj, br, bj) {
 		const complex = this.multiply(ar, aj, br, -bj);
-		return this.fast_atan2(complex.cj, complex.cr);
+		return this.fast_atan2_bis(complex.cj, complex.cr);
 
 	}
 
@@ -89,6 +90,21 @@ class FMDemod {
 		return pcm;
 	}
 
+	dc_block_filter(pcm) {
+		let avg = 0;
+		let sum = 0;
+		for (let i=0; i < pcm.length; i++) {
+			sum += pcm[i];
+		}
+		avg = sum / pcm.length;
+		avg = (avg + this.dc_avg * 9) / 10;
+		for (let i=0; i < pcm.length; i++) {
+			pcm[i] -= avg;
+		}
+		this.dc_avg = avg;
+		return pcm;
+	}
+
 	demodulate(buffer) {
 		let result = new Float32Array(buffer.length / 2);
 		let pr = this.pre_r;
@@ -101,7 +117,7 @@ class FMDemod {
 
 		this.pre_r = pr;
 		this.pre_j = pj;
-		return this.deemph_filter(result);
+		return this.deemph_filter(this.dc_block_filter(result));
 	}
 }
 
