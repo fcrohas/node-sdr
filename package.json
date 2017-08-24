@@ -13,6 +13,7 @@
     "express": "~4.15.2",
     "jade": "~1.11.0",
     "kissfft-js": "^0.1.4",
+    "libopus.js": "0.0.1",
     "morgan": "~1.8.1",
     "node-wav": "0.0.2",
     "sdrjs": "0.0.6",

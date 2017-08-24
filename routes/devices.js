@@ -1,6 +1,5 @@
 var express = require('express');
 var fs = require('fs');
-var wavEncoder = require('node-wav');
 var router = express.Router();
 var devices = [];
 var deviceChannels = [];
@@ -87,27 +86,7 @@ router.get('/open/:serialNumber', function(req, res, next) {
 						// Demodulate signal
 						if (iqprocessor.canDemodulate()) {
 							var pcmOut = iqprocessor.doDemodulate(floatarr);
-							if ((pcmOut != null) && (!saved)) {
-								// write pcm to file when engouh data
-								/*console.log('size='+fileSize+' length='+fileoutput.length);*/
-								if (fileSize + pcmOut.length >= 258000) {
-									let audioData = new Array(1);
-									audioData[0] = fileoutput;
-									const wavdata = wavEncoder.encode(audioData, {sampleRate:22050, float:true, bitDepth:32});
-									fs.writeFile('./data/test.wav', Buffer.from(wavdata), (err) => {
-										if (err) {
-											console.log(err);
-										} else {
-											console.log('File saved !');
-										}
-									});
-									saved = true;
-								} else {
-									fileoutput.set(pcmOut, fileSize);
-									fileSize += pcmOut.length;
-								}
 								//socket.emit('pcm',Buffer.from(pcmOut.buffer));
-							}
 						}
 					});
 				});
