@@ -4,7 +4,6 @@ const Window = require('./radio/filters/window');
 const AMDemod = require('./radio/demodulator/amdemod');
 const FMDemod = require('./radio/demodulator/fmdemod');
 const SSBDemod = require('./radio/demodulator/ssbdemod');
-const Audio = require('./radio/audio/audio');
 
 class IQProcessor {
 
@@ -19,10 +18,9 @@ class IQProcessor {
 		this.order = 27;
 		this.fftwindow = new Window(size);
 		this.fftwindow.build(Window.hann);
-		this.audiofilter = new FIR(22050, this.size + this.order);
+		this.audiofilter = new FIR(24000, this.size + this.order);
 		this.audiofilter.setWindow(this.fftwindow.get());
-		this.audiofilter.buildLowpass( 11025, this.order);
-		this.audio = new Audio();
+		this.audiofilter.buildLowpass( 12000, this.order);
 	}
 
 	canDemodulate() {
@@ -109,7 +107,7 @@ class IQProcessor {
 	doResample(pcmdata) {
 		let decim = 1 << 31 - Math.clz32(this.sampleRate / this.bandwidth);
 		const fast = this.sampleRate / decim;
-		const slow = 22050;
+		const slow = 24000;
 		let i = 0;
 		let i2 = 0;
 		let now_lpr = 0;
@@ -190,7 +188,6 @@ class IQProcessor {
 			var truncData = resample.subarray(f, f + this.size);
 			filtered.set(this.audiofilter.doFilterReal(truncData), f);
 		}
-		this.audio.encode(filtered);
 		return filtered;
 	}
 

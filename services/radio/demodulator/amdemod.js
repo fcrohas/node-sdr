@@ -1,22 +1,10 @@
-class AMDemod {
+const Demodulator = require('./demodulator');
+
+class AMDemod extends Demodulator  {
 
 	constructor(mode) {
+		super();
 		this.dc_avg = 0;
-	}
-
-	dc_block_filter(pcm) {
-		let avg = 0;
-		let sum = 0;
-		for (let i=0; i < pcm.length; i++) {
-			sum += pcm[i];
-		}
-		avg = sum / pcm.length;
-		avg = (avg + this.dc_avg * 9) / 10;
-		for (let i=0; i < pcm.length; i++) {
-			pcm[i] -= avg;
-		}
-		this.dc_avg = avg;
-		return pcm;
 	}
 
 	demodulate(buffer) {

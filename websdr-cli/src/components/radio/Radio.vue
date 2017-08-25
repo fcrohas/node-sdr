@@ -8,6 +8,9 @@
 				<vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="400" :h="300" :x="100" :y="100">
 					<control></control>
 				</vue-draggable-resizable>
+				<vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="100" :h="50" :x="100" :y="500">
+					<audio-stream></audio-stream>
+				</vue-draggable-resizable>
 			</v-flex>
 		</v-layout>
 	</v-container>
@@ -17,18 +20,24 @@
 import { mapGetters, mapActions } from 'vuex'
 import Waterfall from './Waterfall'
 import Control from './Control'
+import AudioStream from './Audio'
 
 export default {
   name: 'Radio',
-  components: { Waterfall, Control },
+  components: { Waterfall, Control, AudioStream },
   computed: mapGetters({
     tunedFrequency: 'tunedFrequency',
     currentBandwidth: 'currentBandwidth',
     centerFrequency: 'centerFrequency'
   }),
   methods: mapActions({
-    changeCenterFrequency: 'changeCenterFrequency'
-  })
+    changeCenterFrequency: 'changeCenterFrequency',
+    connect: 'connect'
+  }),
+  mounted: function () {
+    // Connect to socket serial number
+    this.connect(this.$route.params.serialNumber)
+  }
 }
 </script>
 

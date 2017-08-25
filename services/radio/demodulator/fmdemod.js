@@ -1,10 +1,12 @@
-class FMDemod {
+const Demodulator = require('./demodulator');
+
+class FMDemod extends Demodulator {
 
 	constructor(mode) {
+		super();
 		this.pre_r = 0;
 		this.pre_j = 0;
 		this.avg = 0;
-		this.dc_avg = 0;
 		this.discriminant = null;
 		this.deemph_a = Math.round(1.0/((1.0-Math.exp(-1.0/(22050 * 75e-6)))));
 		console.log(this.deemph_a);
@@ -87,21 +89,6 @@ class FMDemod {
 			}
 			pcm[i] = this.avg;
 		}
-		return pcm;
-	}
-
-	dc_block_filter(pcm) {
-		let avg = 0;
-		let sum = 0;
-		for (let i=0; i < pcm.length; i++) {
-			sum += pcm[i];
-		}
-		avg = sum / pcm.length;
-		avg = (avg + this.dc_avg * 9) / 10;
-		for (let i=0; i < pcm.length; i++) {
-			pcm[i] -= avg;
-		}
-		this.dc_avg = avg;
 		return pcm;
 	}
 

@@ -1,18 +1,20 @@
-var express = require('express');
-var fs = require('fs');
-var router = express.Router();
-var devices = [];
-var deviceChannels = [];
-var node_config = process.env.NODE_ENV || 'development';
-var config = require('config-node')();
-var IQProcessor = require('../services/iqprocessor');
-var FFT_SIZE = 4096;
-var iqprocessor = new IQProcessor(FFT_SIZE);
+const express = require('express');
+const fs = require('fs');
+const router = express.Router();
+let devices = [];
+let deviceChannels = [];
+const node_config = process.env.NODE_ENV || 'development';
+const config = require('config-node')();
+const IQProcessor = require('../services/iqprocessor');
+const Audio = require('../services/radio/audio/audio');
+const FFT_SIZE = 4096;
+const iqprocessor = new IQProcessor(FFT_SIZE);
 
 /* Wrapper object */
-var socketRouter = { 
+const socketRouter = { 
 	router: router, 
 	websocket: null,
+	audio: new Audio(),
 	setWebsocket : function(socket) {
 		this.websocket = socket;
 		if (this.onSocketRegistered != null) {
@@ -73,9 +75,11 @@ router.get('/open/:serialNumber', function(req, res, next) {
 				socket.on('start', (message) => {
 					console.log(socket.id + ' start *** ' + message);
 					device.start();
-					let fileoutput = new Float32Array(258000);
-					let fileSize = 0;
-					let saved = false;
+					// On audio buffer complete
+					socketRouter.audio.on('complete', (compressed) => {
+						socket.emit('pcm',compressed);
+					});
+
 					device.listen((data) => {
 						let floatarr = iqprocessor.convertToFloat(data);						
 						// Process FFT
@@ -86,7 +90,7 @@ router.get('/open/:serialNumber', function(req, res, next) {
 						// Demodulate signal
 						if (iqprocessor.canDemodulate()) {
 							var pcmOut = iqprocessor.doDemodulate(floatarr);
-								//socket.emit('pcm',Buffer.from(pcmOut.buffer));
+							socketRouter.audio.encode(pcmOut);
 						}
 					});
 				});
@@ -120,6 +124,7 @@ router.get('/open/:serialNumber', function(req, res, next) {
 				socket.on('stop', (message, callback) => {
 					console.log(socket.id + ' stop ***' + message + '***');
 					device.stop();
+					socketRouter.audio.off('complete');
 					if (message == 'disconnect') {
 						callback(); // Use call back to confirm disconnect
 						console.log('disconnect client session from server')

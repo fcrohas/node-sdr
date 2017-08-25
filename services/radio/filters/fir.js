@@ -127,7 +127,7 @@ class FIR {
 		let output = new Float32Array(input.length);
 		this.buffer.set(input, this.fir.length);
 		for (let n = 0; n < input.length; n += 2) {
-			let inputp = this.buffer.subarray(n , n + this.fir.length - 1);
+			let inputp = this.buffer.subarray(n , n + this.fir.length);
 /*			inputp = inputp.reverse();*/
 			let pos = inputp.length - 1;
 			for (let k = 0; k < this.fir.length; k+=2) {
@@ -136,7 +136,7 @@ class FIR {
 				pos--;
 			}
 		}
-		this.buffer.set(input.slice(input.length - this.fir.length - 1));
+		this.buffer.set(input.slice(input.length - this.fir.length));
 		return output;
 	}
 

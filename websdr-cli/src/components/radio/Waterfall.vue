@@ -247,25 +247,10 @@ export default {
     tunedFrequency () {
     },
     isConnected (value) {
-      console.log(value)
-    }
-  },
-  mounted: function () {
-    if (this.$route.params != null) {
-      // Prepare websocket connection
-      this.serialNumber = this.$route.params.serialNumber
-      // Initial buffer
-      this.bufferRGBA = new Uint8Array(this.width * 4)
-      // Draw once connected
-      this.drawOverlay(this.$refs.overlay, this.overlayPos)
-      this.drawWaterfall(this.$refs.spectrum, this.fftdata)
-      // Connect to socket serial number
-      this.connect(this.$route.params.serialNumber)
-      // Websocket.connect(this.$route.params.serialNumber)
-      // Websocket.onceEvent('connect', () => {
-      //   // Start on connect
-      //   Websocket.emit('start', 'test')
-      // })
+      if (!value) {
+        Websocket.offEvent('fft')
+        return
+      }
       // Bind event data
       Websocket.onEvent('fft', (data) => {
         const buffer = new Int8Array(data)
@@ -281,6 +266,17 @@ export default {
           this.reDraw()
         }
       })
+    }
+  },
+  mounted: function () {
+    if (this.$route.params != null) {
+      // Prepare websocket connection
+      this.serialNumber = this.$route.params.serialNumber
+      // Initial buffer
+      this.bufferRGBA = new Uint8Array(this.width * 4)
+      // Draw once connected
+      this.drawOverlay(this.$refs.overlay, this.overlayPos)
+      this.drawWaterfall(this.$refs.spectrum, this.fftdata)
     }
   },
   destroyed: function () {
