@@ -1,6 +1,9 @@
 class Demodulator {
 	constructor() {
 		this.dc_avg = 0;
+		this.prev_index = 0;
+		this.now_r = 0;
+		this.now_j = 0;
 	}
 
 	dc_block_filter(pcm) {
@@ -21,23 +24,20 @@ class Demodulator {
 	decimate(dataarr, factor) {
 		let d = 0;
 		let d2 = 0;
-		let prev_index = 0;
-		let now_r = 0;
-		let now_j = 0;
 		while (d < dataarr.length) {
-			now_r += dataarr[d];
-			now_j += dataarr[d + 1];
+			this.now_r += dataarr[d];
+			this.now_j += dataarr[d + 1];
 			d = d + 2;
-			prev_index++;
-			if (prev_index < decim) continue;
-			dataarr[d2] = now_r;
-			dataarr[d2 + 1] = now_j;
-			prev_index = 0;
-			now_r = 0;
-			now_j = 0;
+			this.prev_index++;
+			if (this.prev_index < factor) continue;
+			dataarr[d2] = this.now_r;
+			dataarr[d2 + 1] = this.now_j;
+			this.prev_index = 0;
+			this.now_r = 0;
+			this.now_j = 0;
 			d2+=2;
 		}
-		return dataarr;
+		return d2;
 	}
 }
 

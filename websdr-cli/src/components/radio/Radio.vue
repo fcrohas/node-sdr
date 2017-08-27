@@ -8,7 +8,7 @@
 				<vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="400" :h="300" :x="100" :y="100">
 					<control></control>
 				</vue-draggable-resizable>
-				<vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="100" :h="50" :x="100" :y="500">
+				<vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="400" :h="200" :x="800" :y="200">
 					<audio-stream></audio-stream>
 				</vue-draggable-resizable>
 			</v-flex>

@@ -10,7 +10,7 @@ const state = {
   opened: false,
   tunerGain: 241,
   capabilities: [],
-  modulation: 'FM'
+  modulation: 'WFM'
 }
 
 const getters = {

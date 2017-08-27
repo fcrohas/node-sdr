@@ -16,6 +16,7 @@
   "dependencies": {
     "axios": "^0.16.2",
     "libopus.js": "0.0.1",
+    "libsamplerate.js": "^1.0.0",
     "socket.io": "^2.0.3",
     "vue": "^2.3.3",
     "vue-draggable-resizable": "^1.2.7",

@@ -1,5 +1,25 @@
 <template>
-    <h2>Audio</h2>
+  <v-container fluid>
+    <v-layout>
+      <v-flex xs12 align-end flexbox>
+        <v-progress-circular
+            v-bind:size="100"
+            v-bind:width="15"
+            v-bind:rotate="360"
+            v-bind:value="getAvailableBufferSize"
+            class="teal--text"
+          >
+            {{ getAvailableBufferSize }} %
+        </v-progress-circular>
+      </v-flex>
+      <v-flex xs12 align-end flexbox>
+        <span>Buffer status : {{getBufferStatus}}</span>
+      </v-flex>
+      <v-flex xs12 align-end flexbox>
+        <canvas ref="audioSpectrum" class="audioSpectrum"></canvas>
+      </v-flex>
+    </v-layout>
+  </v-container>
 </template>
 
 <script>
@@ -12,59 +32,104 @@ export default {
 
   data () {
     return {
-      samplerate: 24000,
+      playBufferSize: 24000 * 1,
+      sourceSampleRate: 24000,
       context: null,
-      source: null,
       gainNode: null,
-      filler: null,
-      buffer: null,
       ringbuffer: null,
       ringwriteoffset: 0,
       ringreadoffset: 0,
       ringavailable: 0,
-      isPlaying: false
+      isPlaying: false,
+      time: 0,
+      fftArray: null,
+      analyzer: null,
+      width: 640,
+      height: 480,
+      sources: []
     }
   },
-  computed: mapGetters({
-    isConnected: 'isConnected'
-  }),
+  computed: {
+    ...mapGetters({
+      isConnected: 'isConnected'
+    }),
+    getAvailableBufferSize () {
+      if ((this.ringavailable != null) && (this.ringbuffer != null)) {
+        return Math.round(this.ringavailable * 100 / this.ringbuffer.length)
+      } else {
+        return 0
+      }
+    },
+    getBufferStatus () {
+      if (this.ringavailable < this.playBufferSize) {
+        return 'Underrun'
+      } else {
+        return ''
+      }
+    }
+  },
   methods: {
-    getRingBufferData: function (event) {
-      // Buffer pointer
-/*      const output = event.outputBuffer.getChannelData(0)
-      if (this.ringreadoffset + 16384 > this.ringbuffer.length) {
-        output.set(this.ringbuffer.subarray(this.ringreadoffset, this.ringbuffer.length - this.ringreadoffset))
-        output.set(this.ringbuffer.subarray(0, 16384 - this.ringbuffer.length - this.ringreadoffset), this.ringbuffer.length - this.ringreadoffset)
-      } else {
-        output.set(this.ringbuffer.subarray(this.ringreadoffset, this.ringreadoffset + 16384))
-      }
-      // retrieve 16384
-      this.ringavailable -= 16384 */
-    },
-    playBuffer: function () {
-      // const buffer = this.buffer.getChannelData(0)
+    playBuffer (chunk) {
+      // create a 5s audio buffer
+      const audioBuffer = this.context.createBuffer(1, this.playBufferSize, this.sourceSampleRate)
+      const buffer = audioBuffer.getChannelData(0)
+      buffer.set(chunk)
       // Play buffer source
-      this.source.buffer = this.buffer
+      const source = this.context.createBufferSource()
+      source.buffer = audioBuffer
       // Connect Web Audio component
-      this.source.connect(this.filler)
-      this.filler.connect(this.gainNode)
+      source.connect(this.analyzer)
+      this.analyzer.connect(this.gainNode)
+      // this.filler.connect(this.gainNode)
       this.gainNode.connect(this.context.destination)
-      this.source.loop = true
-      this.source.start(0)
+      source.start(this.time)
+      // On play ended get another from buffer cache
+      source.onended = () => {
+        if (this.ringavailable >= this.playBufferSize) {
+          this.playDirectBuffer()
+        } else {
+          this.isPlaying = false
+        }
+      }
+      this.time += source.buffer.duration
+      // this.sources.push(source)
     },
-    playDirectBuffer: function () {
-      const output = this.buffer.getChannelData(0)
-      if (this.ringreadoffset + 16384 > this.ringbuffer.length) {
+    playDirectBuffer () {
+      const output = new Float32Array(this.playBufferSize)
+      if (this.ringreadoffset + this.playBufferSize > this.ringbuffer.length) {
         output.set(this.ringbuffer.subarray(this.ringreadoffset, this.ringbuffer.length - this.ringreadoffset))
-        output.set(this.ringbuffer.subarray(0, 16384 - this.ringbuffer.length - this.ringreadoffset), this.ringbuffer.length - this.ringreadoffset)
-        this.ringreadoffset = 16384 - this.ringbuffer.length - this.ringreadoffset
+        output.set(this.ringbuffer.subarray(0, this.playBufferSize - this.ringbuffer.length - this.ringreadoffset), this.ringbuffer.length - this.ringreadoffset)
+        this.ringreadoffset = this.playBufferSize - (this.ringbuffer.length - this.ringreadoffset)
       } else {
-        output.set(this.ringbuffer.subarray(this.ringreadoffset, this.ringreadoffset + 16384))
-        this.ringreadoffset += 16384
+        output.set(this.ringbuffer.subarray(this.ringreadoffset, this.ringreadoffset + this.playBufferSize))
+        this.ringreadoffset += this.playBufferSize
       }
       // retrieve 16384
-      this.ringavailable -= 16384
-      // this.source.buffer = this.buffer
+      this.ringavailable -= this.playBufferSize
+      // Play buffer
+      this.playBuffer(output)
+    },
+    draw (canvasCtx) {
+      this.analyzer.getByteFrequencyData(this.fftArray)
+      const minimum = this.analyzer.minDecibels
+      const maximum = this.analyzer.maxDecibels
+      const scale = this.height / (maximum - minimum)
+      canvasCtx.fillStyle = 'rgb(0, 0, 0)'
+      canvasCtx.fillRect(0, 0, this.width, this.height)
+      canvasCtx.lineWidth = 2
+      canvasCtx.strokeStyle = 'rgb(255, 255, 255)'
+      canvasCtx.beginPath()
+      let sliceWidth = this.width * 1.0 / this.analyzer.frequencyBinCount
+      let x = 0
+      for (let i = 0; i < this.analyzer.frequencyBinCount; i++) {
+        let v = this.fftArray[i] / 2 * scale
+        canvasCtx.fillStyle = 'rgb(' + (v + 100) + ', 50, 50)'
+        canvasCtx.fillRect(x, this.height - v / 2, sliceWidth, v)
+        x += sliceWidth + 1
+      }
+      canvasCtx.lineTo(this.width, this.height / 2)
+      canvasCtx.stroke()
+      requestAnimationFrame(() => { this.draw(canvasCtx) })
     }
   },
   watch: {
@@ -74,30 +139,38 @@ export default {
         return
       }
       // Prepare Opus decompress
-      const decoder = new opus.Decoder({rate: this.samplerate, channels: 1})
+      const decoder = new opus.Decoder({rate: this.sourceSampleRate, channels: 1})
       // wait for websocket pcm data
       Websocket.onEvent('pcm', (data) => {
         // Decode frames
         const pcm = decoder.decodeFloat32(Buffer.from(data))
-        this.ringavailable += pcm.length
         // if ring buffer is full soon
         if (this.ringwriteoffset + pcm.length > this.ringbuffer.length) {
           // fill end with remaining data
           this.ringbuffer.set(pcm.subarray(0, this.ringbuffer.length - this.ringwriteoffset), this.ringwriteoffset)
           // then fill remaining to buffer start
-          this.ringwriteoffset = this.ringbuffer.length - this.ringwriteoffset
+          this.ringwriteoffset = pcm.length - (this.ringbuffer.length - this.ringwriteoffset)
           this.ringbuffer.set(pcm.subarray(this.ringwriteoffset))
         } else {
           // add to ring buffer end
           this.ringbuffer.set(pcm, this.ringwriteoffset)
           this.ringwriteoffset += pcm.length
         }
+        this.ringavailable += pcm.length
         // start playing when engouh available
-        if (this.ringavailable > 16384) {
+        if (this.ringavailable >= this.playBufferSize) {
           if (!this.isPlaying) {
-            this.playBuffer()
-            this.isPlaying = true
-            setInterval(this.playDirectBuffer, this.buffer.duration * 1000)
+            // Wait 5s before launch playing
+            if (this.ringavailable >= this.playBufferSize * 10) {
+              const canvasCtx = this.$refs.audioSpectrum.getContext('2d')
+              this.$refs.audioSpectrum.width = this.width
+              this.$refs.audioSpectrum.height = this.height
+              this.draw(canvasCtx)
+              this.playDirectBuffer()
+              this.isPlaying = true
+            }
+          } else {
+            // this.playDirectBuffer()
           }
         }
       })
@@ -108,21 +181,24 @@ export default {
     window.AudioContext = window.AudioContext || window.webkitAudioContext
     // Audio context
     this.context = new window.AudioContext()
-    // create a source
-    this.source = this.context.createBufferSource(0)
+    // 15s audio buffer
+    this.ringbuffer = new Float32Array(this.sourceSampleRate * 20)
     // create a gain node
     this.gainNode = this.context.createGain()
-    this.gainNode.gain.value = 25
-    // create a 5s audio buffer
-    this.buffer = this.context.createBuffer(1, 16384, this.samplerate)
-    // Create a script processor to loop on
-    this.filler = this.context.createScriptProcessor(16384, 1, 1)
-    this.filler.onaudioprocess = this.getRingBufferData
-    // 20s audio buffer
-    this.ringbuffer = new Float32Array(this.samplerate * 20)
+    this.gainNode.gain.value = 2
+    // create analyzer visualization
+    this.analyzer = this.context.createAnalyser()
+    this.analyzer.fftSize = 2048
+    this.fftArray = new Uint8Array(this.analyzer.frequencyBinCount)
   }
 }
 </script>
 
 <style lang="css" scoped>
+.audioSpectrum {
+  position: absolute;
+  border:1px solid #BBB;
+  width: 100%;
+  height: 100%;
+}
 </style>

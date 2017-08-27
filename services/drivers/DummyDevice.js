@@ -1,4 +1,4 @@
-Device = require('./device');
+const Device = require('./device');
 
 class DummyDevice extends Device {
 
@@ -48,6 +48,7 @@ class DummyDevice extends Device {
 		console.log('Device listener thread started.');
 		this.spawn = this.threads.spawn;
 		this.thread = this.spawn((input, done, progress) => {
+
 			this.fs = require('fs');
 			this.wavreader = require('node-wav');
 			let buffer = this.fs.readFileSync('./data/FM_HD_IQ.wav');
@@ -87,7 +88,10 @@ class DummyDevice extends Device {
 	listen(callback) {
 		this.thread
 		.send()
-		.on('progress', (progress) => {
+		.on('progress', (json) => {
+			console.log(json);
+			const progress = JSON.parse(json);
+
 			const floatarr = new Float32Array(progress.length);
 			for(let i = 0; i < progress.length; i++) {
 				floatarr[i] = progress.data[i];

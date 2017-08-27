@@ -136,7 +136,7 @@ class FIR {
 				pos--;
 			}
 		}
-		this.buffer.set(input.slice(input.length - this.fir.length));
+		this.buffer.set(input.subarray(input.length - this.fir.length));
 		return output;
 	}
 
@@ -152,7 +152,7 @@ class FIR {
 				pos--;
 			}
 		}
-		this.buffer.set(input.slice(input.length - this.fir.length / 2));
+		this.buffer.set(input.subarray(input.length - this.fir.length / 2));
 		return output;
 	}
 }
