@@ -54,24 +54,24 @@ class DummyDevice extends Device {
 			let buffer = this.fs.readFileSync('./data/FM_HD_IQ.wav');
 			let result = this.wavreader.decode(buffer);	
 			let interleavedArr = new Float32Array(262144);
+			console.log('Reading wav file at rate='+result.sampleRate+' length='+result.channelData[0].length);			
+			let i = 0;
 			while(1) {
-				//super.setSampleRate(result.sampleRate);
-				console.log('Reading wav file at rate='+result.sampleRate+' length='+result.channelData[0].length);
-				for(let i = 0; i < result.channelData[0].length; i += 131072) {
-					// interleave data
-					const chunkI = result.channelData[0].subarray(i, i + 131072);
-					const chunkQ = result.channelData[1].subarray(i, i + 131072);
-					let c=0;
-					for (let j = 0; j < 262144; j+=2) {
-						interleavedArr[j] = chunkI[c];
-						interleavedArr[j + 1] = chunkQ[c];
-						c++;
-					}
-					progress({data :interleavedArr, length:interleavedArr.length});
-					var waitTill = new Date(new Date().getTime() + 103);
-					while(waitTill > new Date()){}
+				// interleave data
+				const chunkI = result.channelData[0].subarray(i, i + 131072);
+				const chunkQ = result.channelData[1].subarray(i, i + 131072);
+				let c=0;
+				for (let j = 0; j < 262144; j+=2) {
+					interleavedArr[j] = chunkI[c];
+					interleavedArr[j + 1] = chunkQ[c];
+					c++;
 				}
-				console.log('Loop again ...');
+				progress({data :interleavedArr, length:interleavedArr.length});
+				if (i + 131072 < result.channelData[0].length) {
+					i += 131072;
+				} else {
+					i = 0;
+				}
 			}
 			console.log('End of streaming...');			
 			done();
@@ -88,10 +88,7 @@ class DummyDevice extends Device {
 	listen(callback) {
 		this.thread
 		.send()
-		.on('progress', (json) => {
-			console.log(json);
-			const progress = JSON.parse(json);
-
+		.on('progress', (progress) => {
 			const floatarr = new Float32Array(progress.length);
 			for(let i = 0; i < progress.length; i++) {
 				floatarr[i] = progress.data[i];

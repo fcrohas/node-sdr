@@ -31,12 +31,13 @@ class Audio {
 			this.buffer.set(pcm, this.bufferOffset);
 			this.bufferOffset += pcm.length;
 		} else {
+			console.time("sendBuffer");
 			// save to the end of the buffer
 			//subarray is safe here as it is only in this submethod
 			if (this.buffer.length - this.bufferOffset > 0) {
 				this.buffer.set(pcm.subarray(0, this.buffer.length - this.bufferOffset), this.bufferOffset);
 			}
-			// Compress 5s per frame size then send
+			// Compress 1s frame per frame size then send
 			for (let i = 0; i < this.buffer.length; i += this.frame_size) {
 				const compressed = this.encoder.encode(this.buffer.subarray(i, i + this.frame_size));
 				if (this.callback['complete'] != null) {
@@ -53,6 +54,7 @@ class Audio {
 				this.bufferOffset = pcm.length;
 				this.buffer.set(pcm);
 			}
+			console.timeEnd("sendBuffer");
 		}
 	}
 

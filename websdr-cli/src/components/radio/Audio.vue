@@ -69,32 +69,27 @@ export default {
     }
   },
   methods: {
-    playBuffer (chunk) {
-      // create a 5s audio buffer
+    createPlayBuffer (chunk) {
+      // create a 1s audio buffer
       const audioBuffer = this.context.createBuffer(1, this.playBufferSize, this.sourceSampleRate)
+      // Get data from channel
       const buffer = audioBuffer.getChannelData(0)
       buffer.set(chunk)
       // Play buffer source
       const source = this.context.createBufferSource()
+      // Assign new buffer
       source.buffer = audioBuffer
       // Connect Web Audio component
+      // Analyzer
       source.connect(this.analyzer)
+      // Gain
       this.analyzer.connect(this.gainNode)
       // this.filler.connect(this.gainNode)
       this.gainNode.connect(this.context.destination)
-      source.start(this.time)
-      // On play ended get another from buffer cache
-      source.onended = () => {
-        if (this.ringavailable >= this.playBufferSize) {
-          this.playDirectBuffer()
-        } else {
-          this.isPlaying = false
-        }
-      }
-      this.time += source.buffer.duration
-      // this.sources.push(source)
+      // Return current buffer time
+      return source
     },
-    playDirectBuffer () {
+    getPlayDirectBuffer () {
       const output = new Float32Array(this.playBufferSize)
       if (this.ringreadoffset + this.playBufferSize > this.ringbuffer.length) {
         output.set(this.ringbuffer.subarray(this.ringreadoffset, this.ringbuffer.length - this.ringreadoffset))
@@ -107,7 +102,7 @@ export default {
       // retrieve 16384
       this.ringavailable -= this.playBufferSize
       // Play buffer
-      this.playBuffer(output)
+      return this.createPlayBuffer(output)
     },
     draw (canvasCtx) {
       this.analyzer.getByteFrequencyData(this.fftArray)
@@ -161,16 +156,28 @@ export default {
         if (this.ringavailable >= this.playBufferSize) {
           if (!this.isPlaying) {
             // Wait 5s before launch playing
-            if (this.ringavailable >= this.playBufferSize * 10) {
+            if (this.ringavailable >= this.playBufferSize * 5) {
               const canvasCtx = this.$refs.audioSpectrum.getContext('2d')
               this.$refs.audioSpectrum.width = this.width
               this.$refs.audioSpectrum.height = this.height
               this.draw(canvasCtx)
-              this.playDirectBuffer()
+              for (let i = 0; i < 2; i++) {
+                const source = this.getPlayDirectBuffer()
+                if (i === 0) {
+                  this.time = this.context.currentTime
+                  source.start(this.time)
+                  this.time += source.buffer.duration
+                } else {
+                  source.start(this.time)
+                  this.time += source.buffer.duration
+                }
+              }
               this.isPlaying = true
             }
           } else {
-            // this.playDirectBuffer()
+            const source = this.getPlayDirectBuffer()
+            source.start(this.time)
+            this.time += source.buffer.duration
           }
         }
       })
@@ -182,7 +189,7 @@ export default {
     // Audio context
     this.context = new window.AudioContext()
     // 15s audio buffer
-    this.ringbuffer = new Float32Array(this.sourceSampleRate * 20)
+    this.ringbuffer = new Float32Array(this.sourceSampleRate * 10)
     // create a gain node
     this.gainNode = this.context.createGain()
     this.gainNode.gain.value = 2
@@ -190,6 +197,10 @@ export default {
     this.analyzer = this.context.createAnalyser()
     this.analyzer.fftSize = 2048
     this.fftArray = new Uint8Array(this.analyzer.frequencyBinCount)
+  },
+  destroyed: function () {
+    this.context.close()
+    this.isPlaying = false
   }
 }
 </script>
