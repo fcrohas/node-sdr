@@ -32,7 +32,7 @@ export default {
 
   data () {
     return {
-      playBufferSize: 24000 * 1,
+      playBufferSize: 24000,
       sourceSampleRate: 24000,
       context: null,
       gainNode: null,
@@ -46,7 +46,8 @@ export default {
       analyzer: null,
       width: 640,
       height: 480,
-      sources: []
+      sources: [],
+      sourceCount: 0
     }
   },
   computed: {
@@ -55,7 +56,8 @@ export default {
     }),
     getAvailableBufferSize () {
       if ((this.ringavailable != null) && (this.ringbuffer != null)) {
-        return Math.round(this.ringavailable * 100 / this.ringbuffer.length)
+        // return Math.round(this.ringavailable * 100 / this.ringbuffer.length)
+        return Math.round(this.sourceCount * 100 / 8)
       } else {
         return 0
       }
@@ -82,11 +84,21 @@ export default {
       // Connect Web Audio component
       // Analyzer
       source.connect(this.analyzer)
+      source.onended = () => {
+        this.sourceCount -= 1
+        if (this.ringavailable >= this.playBufferSize) {
+          const source = this.getPlayDirectBuffer()
+          source.start(this.time)
+          this.time += source.buffer.duration
+        } else {
+          this.isPlaying = false
+        }
+      }
       // Gain
       this.analyzer.connect(this.gainNode)
-      // this.filler.connect(this.gainNode)
       this.gainNode.connect(this.context.destination)
       // Return current buffer time
+      this.sourceCount += 1
       return source
     },
     getPlayDirectBuffer () {
@@ -134,7 +146,7 @@ export default {
         return
       }
       // Prepare Opus decompress
-      const decoder = new opus.Decoder({rate: this.sourceSampleRate, channels: 1})
+      const decoder = new opus.Decoder({rate: this.sourceSampleRate, channels: 1, unsafe: true})
       // wait for websocket pcm data
       Websocket.onEvent('pcm', (data) => {
         // Decode frames
@@ -156,15 +168,15 @@ export default {
         if (this.ringavailable >= this.playBufferSize) {
           if (!this.isPlaying) {
             // Wait 5s before launch playing
-            if (this.ringavailable >= this.playBufferSize * 5) {
+            if (this.ringavailable > this.playBufferSize * 8) {
               const canvasCtx = this.$refs.audioSpectrum.getContext('2d')
               this.$refs.audioSpectrum.width = this.width
               this.$refs.audioSpectrum.height = this.height
               this.draw(canvasCtx)
-              for (let i = 0; i < 2; i++) {
+              for (let i = 0; i < 4; i++) {
                 const source = this.getPlayDirectBuffer()
                 if (i === 0) {
-                  this.time = this.context.currentTime
+                  this.time = this.context.currentTime + 1
                   source.start(this.time)
                   this.time += source.buffer.duration
                 } else {
@@ -175,9 +187,9 @@ export default {
               this.isPlaying = true
             }
           } else {
-            const source = this.getPlayDirectBuffer()
-            source.start(this.time)
-            this.time += source.buffer.duration
+            // const source = this.getPlayDirectBuffer()
+            // source.start(this.time)
+            // this.time += source.buffer.duration
           }
         }
       })
@@ -189,7 +201,7 @@ export default {
     // Audio context
     this.context = new window.AudioContext()
     // 15s audio buffer
-    this.ringbuffer = new Float32Array(this.sourceSampleRate * 10)
+    this.ringbuffer = new Float32Array(this.sourceSampleRate * 8)
     // create a gain node
     this.gainNode = this.context.createGain()
     this.gainNode.gain.value = 2

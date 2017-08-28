@@ -20,7 +20,7 @@ class IQProcessor {
 		this.fftwindow.build(Window.hann);
 		this.audiofilter = new FIR(24000, this.size + this.order);
 		this.audiofilter.setWindow(this.fftwindow.get());
-		this.audiofilter.buildLowpass( 10000, this.order);
+		this.audiofilter.buildLowpass( 12000, this.order);
 		this.decimationFactor = 1;
 		this.xlatvectArr = null;
 		this.xlatArr = null;		
@@ -78,7 +78,7 @@ class IQProcessor {
 		this.updateDemodulate = true;
 		switch(modulation) {
 			case 'WFM' : this.demodulator = new FMDemod(0); break;
-			case 'FM' : this.demodulator = new FMDemod(1); break;
+			case 'FM' : this.demodulator = new FMDemod(2); break;
 			case 'AM' : this.demodulator = new AMDemod(0); break;
 			case 'USB' : this.demodulator = new SSBDemod('USB'); break;
 			case 'LSB' : this.demodulator = new SSBDemod('LSB'); break;

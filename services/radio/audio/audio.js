@@ -15,15 +15,16 @@ class Audio {
 
 	constructor() {
 		this.audiorate = 24000;
-		this.encoder = new Encoder({rate:this.audiorate, channels: 1});
+		this.encoder = new Encoder({rate:this.audiorate, channels: 1, unsafe: true});
 		this.decoder = new Decoder({rate:this.audiorate, channels: 1});
 		// 10 ms frame_size
-		this.frame_size = (this.audiorate / 100); 
+		this.frame_size = 240; 
 		// 5s buffer ? 
-		this.buffer = new Float32Array(24000 * 1);
+		this.buffer = new Float32Array(24000);
 		this.bufferOffset = 0;
 		// Callabck events
 		this.callback = [];
+		this.previous = [];
 	}
 
 	encode(pcm) {
@@ -31,7 +32,6 @@ class Audio {
 			this.buffer.set(pcm, this.bufferOffset);
 			this.bufferOffset += pcm.length;
 		} else {
-			console.time("sendBuffer");
 			// save to the end of the buffer
 			//subarray is safe here as it is only in this submethod
 			if (this.buffer.length - this.bufferOffset > 0) {
@@ -47,14 +47,13 @@ class Audio {
 			// this.save('./data/test.wav');
 			// save remaining data
 			if (this.buffer.length - this.bufferOffset > 0) {
-				this.buffer.set(pcm.subarray(pcm.length - (this.buffer.length - this.bufferOffset)), 0);
+				this.buffer.set(pcm.subarray(pcm.length - (this.buffer.length - this.bufferOffset)));
 				this.bufferOffset = pcm.length - (this.buffer.length - this.bufferOffset);
 			} else {
 				// reset buffer to 0
 				this.bufferOffset = pcm.length;
 				this.buffer.set(pcm);
 			}
-			console.timeEnd("sendBuffer");
 		}
 	}
 

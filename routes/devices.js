@@ -89,10 +89,8 @@ router.get('/open/:serialNumber', function(req, res, next) {
 						// }
 						// Demodulate signal
 						if (iqprocessor.canDemodulate()) {
-							console.time("doDemodulate");
 							var pcmOut = iqprocessor.doDemodulate(floatarr);
 							socketRouter.audio.encode(pcmOut);
-							console.timeEnd("doDemodulate");
 						}
 					});
 				});

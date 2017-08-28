@@ -4,8 +4,8 @@ import Websocket from '../../service/websocket'
 const state = {
   frequency: 106100000,
   bandwidth: 170000,
-  centerFrequency: 106100000,
-  sampleRate: 900001,
+  centerFrequency: 105600000,
+  sampleRate: 2048000,
   connected: false,
   opened: false,
   tunerGain: 241,
