@@ -33,6 +33,7 @@ class IQProcessor {
 
 	computeFrequencyXlat() {
 		this.wc0 = -2.0 * Math.PI * (this.frequency  - this.centerFrequency) / this.sampleRate;				
+		this.xlatvectArr = null;
 	}
 
 	canDemodulate() {
@@ -194,7 +195,7 @@ class IQProcessor {
 		if (this.updateFFT) {
 			return null;
 		}
-		var fftOut = new Int8Array(floatarr.length / 2);		
+		var fftOut = new Int8Array(this.size);		
 		let result = new Int8Array(this.size);
 		for (var k = 0; k < floatarr.length; k += this.size * 2) {
 			// fft size is 512 so double buffer
@@ -215,9 +216,16 @@ class IQProcessor {
 				}
 				j++;
 			}
-			// store fft for this chunk
-			fftOut.set(result, k / 2);
-
+			// Average result
+			if (k == 0) {
+				// store fft for this chunk
+				fftOut.set(result);
+			} else {
+				// average results
+				for (let a = 0; a < fftOut.length; a++) {
+					fftOut[a] += result[a] / 2;
+				}
+			}
 		}
 		return fftOut;
 	}

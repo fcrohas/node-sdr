@@ -39,10 +39,8 @@ export default {
       time: 0,
       fftArray: null,
       analyzer: null,
-      width: 640,
-      height: 480,
-      sources: [],
-      sourceCount: 0,
+      width: 320,
+      height: 255,
       pcmData: []
     }
   },
@@ -91,20 +89,22 @@ export default {
     },
     draw (canvasCtx) {
       this.analyzer.getByteFrequencyData(this.fftArray)
-      const minimum = this.analyzer.minDecibels
-      const maximum = this.analyzer.maxDecibels
-      const scale = this.height / (maximum - minimum)
+      // Compute min / max
+      const maxmin = new Uint8Array(this.fftArray)
+      maxmin.sort()
+      const minimum = maxmin[0]
+      const maximum = maxmin[maxmin.length - 1]
       canvasCtx.fillStyle = 'rgb(0, 0, 0)'
       canvasCtx.fillRect(0, 0, this.width, this.height)
       canvasCtx.lineWidth = 2
       canvasCtx.strokeStyle = 'rgb(255, 255, 255)'
       canvasCtx.beginPath()
+      canvasCtx.fillStyle = 'rgb(255, 50, 50)'
       let sliceWidth = this.width * 1.0 / this.analyzer.frequencyBinCount
       let x = 0
       for (let i = 0; i < this.analyzer.frequencyBinCount; i++) {
-        let v = this.fftArray[i] / 2 * scale
-        canvasCtx.fillStyle = 'rgb(' + (v + 100) + ', 50, 50)'
-        canvasCtx.fillRect(x, this.height - v / 2, sliceWidth, v)
+        let v = (this.fftArray[i] - minimum) * 255 / (maximum - minimum)
+        canvasCtx.fillRect(x, this.height - v, sliceWidth, v)
         x += sliceWidth + 1
       }
       canvasCtx.lineTo(this.width, this.height / 2)
@@ -117,22 +117,22 @@ export default {
       if (!value) {
         return
       }
-      const canvasCtx = this.$refs.audioSpectrum.getContext('2d')
+      // const canvasCtx = this.$refs.audioSpectrum.getContext('2d')
       this.$refs.audioSpectrum.width = this.width
       this.$refs.audioSpectrum.height = this.height
-      this.draw(canvasCtx)
+      // this.draw(canvasCtx)
       // wait for websocket pcm data
       Websocket.onAudioFrame(this.sourceSampleRate, 1, (pcm) => {
         // Add decoded pcm to list
         this.pcmData.push(pcm)
         // 8 s buffering
-        if ((this.pcmData.length > 9) && (!this.isPlaying)) {
+        if ((this.pcmData.length > 4) && (!this.isPlaying)) {
           const source = this.createPlayBuffer(this.pcmData.shift())
           this.time = this.context.currentTime + 1
           source.start(this.time)
           this.time += source.buffer.duration
           let i = 0
-          while (i < 4) {
+          while (i < 2) {
             const source = this.createPlayBuffer(this.pcmData.shift())
             source.start(this.time)
             this.time += source.buffer.duration
@@ -144,6 +144,10 @@ export default {
     }
   },
   mounted: function () {
+    // Setup canvas audio analyzer
+    const canvasCtx = this.$refs.audioSpectrum.getContext('2d')
+    this.$refs.audioSpectrum.width = this.width
+    this.$refs.audioSpectrum.height = this.height
     // Prepare webaudio API
     window.AudioContext = window.AudioContext || window.webkitAudioContext
     // Audio context
@@ -153,8 +157,9 @@ export default {
     this.gainNode.gain.value = 2
     // create analyzer visualization
     this.analyzer = this.context.createAnalyser()
-    this.analyzer.fftSize = 2048
+    this.analyzer.fftSize = 128
     this.fftArray = new Uint8Array(this.analyzer.frequencyBinCount)
+    this.draw(canvasCtx)
   },
   destroyed: function () {
     this.context.close()

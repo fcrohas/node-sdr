@@ -186,6 +186,13 @@ export default {
         this.bandwidthChange(evt)
         this.drawFrequency(ctx, this.overlay)
       }, false)
+      canvasElement.addEventListener('click', (evt) => {
+        // compute frequency from click
+        const bin = this.getMousePos(canvasElement, evt).x
+        var baseFrequency = (this.centerFrequency - (this.sampleRate / 2))
+        const frequency = baseFrequency + bin * this.sampleRate / this.bins
+        this.changeFrequency(frequency)
+      })
     },
     drawWaterfall: function (canvasElement, fft) {
       // Get canvas context

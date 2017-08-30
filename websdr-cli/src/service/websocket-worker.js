@@ -1,7 +1,7 @@
 import websocket from './websocket'
 import opus from 'libopus.js'
 
-const ringbuffer = new Float32Array(24000 * 8)
+const ringbuffer = new Float32Array(24000 * 20)
 let ringwriteoffset = 0
 let ringreadoffset = 0
 let ringavailable = 0
@@ -17,6 +17,9 @@ function getPlayDirectBuffer () {
   } else {
     output.set(ringbuffer.subarray(ringreadoffset, ringreadoffset + playBufferSize))
     ringreadoffset += playBufferSize
+    if (ringreadoffset >= ringbuffer.length) {
+        ringreadoffset -= ringbuffer.length
+    }
   }
   // retrieve 16384
   ringavailable -= playBufferSize
@@ -79,11 +82,14 @@ addEventListener('message', (event) => {
             ringbuffer.set(pcm.subarray(0, ringbuffer.length - ringwriteoffset), ringwriteoffset)
             // then fill remaining to buffer start
             ringwriteoffset = pcm.length - (ringbuffer.length - ringwriteoffset)
-            ringbuffer.set(pcm.subarray(ringwriteoffset))
+            ringbuffer.set(pcm.subarray(ringwriteoffset, pcm.length - ringwriteoffset), 0)
           } else {
             // add to ring buffer end
             ringbuffer.set(pcm, ringwriteoffset)
             ringwriteoffset += pcm.length
+            if (ringwriteoffset >= ringbuffer.length) {
+                ringwriteoffset -= ringbuffer.length
+            }
           }
           ringavailable += pcm.length
           // send when when engouth data available

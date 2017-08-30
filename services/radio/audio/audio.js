@@ -47,7 +47,7 @@ class Audio {
 			// this.save('./data/test.wav');
 			// save remaining data
 			if (this.buffer.length - this.bufferOffset > 0) {
-				this.buffer.set(pcm.subarray(pcm.length - (this.buffer.length - this.bufferOffset)));
+				this.buffer.set(pcm.subarray(pcm.length - (this.buffer.length - this.bufferOffset)), 0);
 				this.bufferOffset = pcm.length - (this.buffer.length - this.bufferOffset);
 			} else {
 				// reset buffer to 0
