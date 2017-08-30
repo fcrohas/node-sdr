@@ -151,6 +151,8 @@ router.get('/close/:serialNumber', function(req, res, next) {
 		const device = devices[req.params.serialNumber];
 		// Only one by serial number
 		device.close();
+		// refresj devices
+		devices = socketRouter.devicesManager.getDevices();
 		res.status(200).send();
 	} else {
 		res.status(500).send('Unable to close device with serial : '+req.params.serialNumber);	

@@ -1,5 +1,5 @@
 import * as types from '../mutation-types'
-import Websocket from '../../service/websocket'
+import Websocket from '../../service/websocket-cli'
 
 const state = {
   frequency: 106100000,

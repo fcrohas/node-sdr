@@ -22,6 +22,7 @@ class SDRPlayDevice extends Device {
 	  var devices = [];
 	  const sdrplaydevices = driver.GetDevices(4);
 	  for ( var i = 0; i < sdrplaydevices.length; i++) {
+	    sdrplaydevices[i].idx = i;
 	    devices[sdrplaydevices[i].SerNo] = new SDRPlayDevice(driver, sdrplaydevices[i]);
 	    console.log('Added device with serial ' + sdrplaydevices[i].SerNo);
 	  }
@@ -45,11 +46,13 @@ class SDRPlayDevice extends Device {
 	}
 
 	open() {
-		this.driver.SetDeviceIdx(this.device.DevNm);
+		this.driver.SetDeviceIdx(this.device.idx);
+		console.log("Device "+this.device.idx+" opened.");		
 	}
 
 	close() {
 		this.driver.ReleaseDeviceIdx();
+		console.log("Device closed.");		
 	}
 
 	start() {
