@@ -83,10 +83,10 @@ router.get('/open/:serialNumber', function(req, res, next) {
 					device.listen((data) => {
 						let floatarr = iqprocessor.convertToFloat(data);						
 						// Process FFT
-						// var fftOut = iqprocessor.doFFT(floatarr);
-						// if (fftOut != null) {
-						// 	socket.emit('fft',Buffer.from(fftOut.buffer));
-						// }
+						var fftOut = iqprocessor.doFFT(floatarr);
+						if (fftOut != null) {
+							socket.emit('fft',Buffer.from(fftOut.buffer));
+						}
 						// Demodulate signal
 						if (iqprocessor.canDemodulate()) {
 							var pcmOut = iqprocessor.doDemodulate(floatarr);

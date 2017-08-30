@@ -22,7 +22,7 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex'
-import Websocket from '../../service/websocket'
+import Websocket from '../../service/websocket-cli'
 import Service from '../../service/api'
 
 export default {

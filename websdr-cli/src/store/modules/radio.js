@@ -2,10 +2,10 @@ import * as types from '../mutation-types'
 import Websocket from '../../service/websocket-cli'
 
 const state = {
-  frequency: 106100000,
+  frequency: 105600000,
   bandwidth: 170000,
   centerFrequency: 105600000,
-  sampleRate: 2048000,
+  sampleRate: 900001,
   connected: false,
   opened: false,
   tunerGain: 241,
@@ -28,6 +28,7 @@ const actions = {
   connect ({ commit }, serialNumber) {
     Websocket.connect(serialNumber)
     Websocket.onceEvent('connect', () => {
+      console.log('connected')
       Websocket.emit('config', [
         {
           type: 'modulation',
@@ -53,6 +54,7 @@ const actions = {
           type: 'tunergain',
           value: state.tunerGain
         }], () => {
+          console.log('emit start')
           // Start on connect
           Websocket.emit('start', 'test')
           commit(types.POWER_CHANGE, true)
