@@ -126,13 +126,13 @@ export default {
         // Add decoded pcm to list
         this.pcmData.push(pcm)
         // 8 s buffering
-        if ((this.pcmData.length > 4) && (!this.isPlaying)) {
+        if ((this.pcmData.length > 10) && (!this.isPlaying)) {
           const source = this.createPlayBuffer(this.pcmData.shift())
           this.time = this.context.currentTime + 1
           source.start(this.time)
           this.time += source.buffer.duration
           let i = 0
-          while (i < 2) {
+          while (i < 5) {
             const source = this.createPlayBuffer(this.pcmData.shift())
             source.start(this.time)
             this.time += source.buffer.duration

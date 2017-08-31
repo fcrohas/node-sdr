@@ -54,7 +54,7 @@ export default {
       bufferRGBA: null,
       imageFFT: null,
       spectrumCtx: null,
-      level: 34
+      level: 56
     }
   },
   methods: {
@@ -260,14 +260,14 @@ export default {
       }
       // Bind event data
       Websocket.onEvent('fft', (data) => {
-        const buffer = new Int8Array(data)
+        const buffer = new Uint8Array(data)
         // Split received buffer in bins
         for (let i = 0; i < buffer.length; i += this.bins) {
           var line = buffer.subarray(i, i + this.bins)
           // Convert buffer to RGBA
           for (let c = 0; c < line.length; c++) {
             // HSV
-            const color = this.HSVtoRGB(this.level / 100 - (1 + line[c] / 100) / 2, 0.7, 0.8)
+            const color = this.HSVtoRGB(this.level / 10 - line[c] / 510, 0.7, 0.8)
             this.bufferRGBA.set([color.r, color.g, color.b, 255], c * 4)
           }
           this.reDraw()

@@ -5,14 +5,6 @@ const fs = require('fs');
 
 class Audio {
 
-	get samplerate() {
-		return this.audiorate;
-	}
-
-	set samplerate(value) {
-		this.audiorate = value;
-	}
-
 	constructor() {
 		this.audiorate = 24000;
 		this.encoder = new Encoder({rate:this.audiorate, channels: 1, unsafe: true});
@@ -25,6 +17,14 @@ class Audio {
 		// Callabck events
 		this.callback = [];
 		this.previous = [];
+	}
+
+	get samplerate() {
+		return this.audiorate;
+	}
+
+	set samplerate(value) {
+		this.audiorate = value;
 	}
 
 	encode(pcm) {

@@ -51,30 +51,38 @@ class DummyDevice extends Device {
 
 			this.fs = require('fs');
 			this.wavreader = require('node-wav');
+			this.sleep = require('thread-sleep');
 			let buffer = this.fs.readFileSync('./data/FM_HD_IQ.wav');
 			let result = this.wavreader.decode(buffer);	
-			let interleavedArr = new Float32Array(262144);
 			console.log('Reading wav file at rate='+result.sampleRate+' length='+result.channelData[0].length);			
-			let i = 0;
-			while(1) {
-				// interleave data
-				const chunkI = result.channelData[0].subarray(i, i + 131072);
-				const chunkQ = result.channelData[1].subarray(i, i + 131072);
-				let c=0;
-				for (let j = 0; j < 262144; j+=2) {
-					interleavedArr[j] = chunkI[c];
-					interleavedArr[j + 1] = chunkQ[c];
-					c++;
+			let interleavedArr = new Float32Array(result.channelData[0].length * 2);			
+			// Prepare interleave data
+			let c = 0;
+			const chunkIQ = 32768;
+			const chunkIQ2 = 16384;
+			for (let i = 0; i < result.channelData[0].length; i += chunkIQ2) {
+				const chunkI = result.channelData[0].subarray(i, i + chunkIQ2);
+				const chunkQ = result.channelData[1].subarray(i, i + chunkIQ2);
+				for (let j = 0; j < chunkIQ2; j++) {
+					interleavedArr[c] = chunkI[j];
+					interleavedArr[c + 1] = chunkQ[j];
+					c+=2;
 				}
-				progress({data :interleavedArr, length:interleavedArr.length});
-				if (i + 131072 < result.channelData[0].length) {
-					i += 131072;
+			}
+			let i = 0;
+			// Rouding length
+			const newlength = Math.round( interleavedArr.length / chunkIQ) * chunkIQ;
+			while(1) {
+				if (i + chunkIQ <= newlength) {
+					progress({data: interleavedArr.subarray(i, i + chunkIQ), length: chunkIQ});					
+					i += chunkIQ;
 				} else {
 					i = 0;
 				}
+				//this.sleep(64);
 			}
+
 			console.log('End of streaming...');			
-			done();
 		});		
 	}
 
