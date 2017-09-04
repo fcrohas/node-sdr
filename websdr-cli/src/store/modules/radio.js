@@ -2,10 +2,11 @@ import * as types from '../mutation-types'
 import Websocket from '../../service/websocket-cli'
 
 const state = {
-  frequency: 90200000,
-  bandwidth: 170000,
-  centerFrequency: 90900000,
+  frequency: 105600000,
+  bandwidth: 180000,
+  centerFrequency: 105500000,
   sampleRate: 2048000,
+  audiorate: 24000,
   connected: false,
   opened: false,
   tunerGain: 241,
@@ -21,7 +22,8 @@ const getters = {
   tunerGain: state => state.tunerGain,
   capabilities: state => state.capabilities,
   modulationType: state => state.modulation,
-  sampleRate: state => state.sampleRate
+  sampleRate: state => state.sampleRate,
+  audiorate: state => state.audiorate
 }
 
 const actions = {
@@ -79,6 +81,25 @@ const actions = {
   },
   changeModulation ({ commit }, modulationType) {
     Websocket.emit('config', [{ type: 'modulation', value: modulationType }], () => {
+      console.log('modulationType=' + modulationType)
+      switch (modulationType) {
+        case 'WFM' :
+          commit(types.AUDIORATE_CHANGE, 24000)
+          break
+        case 'FM' :
+          commit(types.AUDIORATE_CHANGE, 24000)
+          break
+        case 'AM' :
+          commit(types.AUDIORATE_CHANGE, 16000)
+          break
+        case 'LSB' :
+          commit(types.AUDIORATE_CHANGE, 8000)
+          break
+        case 'USB' :
+          commit(types.AUDIORATE_CHANGE, 8000)
+          break
+      }
+      // validate modulation change
       commit(types.MODULATION_CHANGE, modulationType)
     })
   },
@@ -99,6 +120,9 @@ const actions = {
   },
   changeSampleRate ({ commit }, samplerate) {
     commit(types.SAMPLERATE_CHANGE, samplerate)
+  },
+  changeAudiorate ({ commit }, audiorate) {
+    commit(types.AUDIORATE_CHANGE, audiorate)
   }
 }
 
@@ -123,6 +147,9 @@ const mutations = {
   },
   [types.SAMPLERATE_CHANGE] (state, sampleRate) {
     state.sampleRate = sampleRate
+  },
+  [types.AUDIORATE_CHANGE] (state, audiorate) {
+    state.audiorate = audiorate
   }
 }
 

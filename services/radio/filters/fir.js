@@ -1,9 +1,10 @@
 class FIR {
-	constructor(sampleRate, maxbuffer) {
+	constructor(sampleRate) {
 		this.sampleRate = sampleRate;
 		this.fir = null;
 		this.window = null;
-		this.buffer = new Float32Array(maxbuffer * 2); // IQ buffer so 2 bytes...
+		this.bufferLength = 0;
+		this.buffer = new Float32Array();
 	}
 
 	setWindow(window) {
@@ -125,6 +126,10 @@ class FIR {
 
 	doFilter(input) {
 		let output = new Float32Array(input.length);
+		if (this.bufferLength != input.length + this.fir.length) {
+			this.buffer = new Float32Array(input.length + this.fir.length); // IQ buffer so 2 bytes...
+			this.bufferLength = input.length + this.fir.length;
+		}
 		this.buffer.set(input, this.fir.length);
 		for (let n = 0; n < input.length; n += 2) {
 			let inputp = this.buffer.subarray(n , n + this.fir.length);
@@ -142,6 +147,10 @@ class FIR {
 
 	doFilterReal(input) {
 		let output = new Float32Array(input.length);
+		if (this.bufferLength != input.length + this.fir.length / 2) {
+			this.buffer = new Float32Array(input.length + this.fir.length / 2); // IQ buffer so 2 bytes...
+			this.bufferLength = input.length + this.fir.length / 2;
+		}
 		this.buffer.set(input, this.fir.length / 2);
 		for (let n = 0; n < input.length; n ++) {
 			let inputp = this.buffer.subarray(n , n + this.fir.length / 2);

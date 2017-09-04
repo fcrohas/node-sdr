@@ -13,22 +13,33 @@ class IQProcessor {
 		this.demodulator = null;
 		this.size = size;
 		this.sampleRate = 2048000;
+		this.audiorate = 24000
 		this.bandwidth = 150000;
 		this.fftr = new KissFFT.FFT(size);
 		this.order = 17;
 		this.fftwindow = new Window(size);
 		this.fftwindow.build(Window.hann);
-		this.audiofilter = new FIR(24000, this.size + this.order);
-		this.audiofilter.setWindow(this.fftwindow.get());
-		this.audiofilter.buildLowpass( 12000, this.order);
 		this.decimationFactor = 1;
 		this.xlatvectArr = null;
 		this.xlatArr = null;		
 		this.wc0 = 0;
+		this.computeDecimation();
+		this.updateAudiorate(this.audiorate);
+	}
+
+	updateAudiorate(audiorate) {
+		this.audiorate = audiorate;
+		this.audiofilter = new FIR(this.audiorate);
+		this.audiowindow = new Window(25);
+		this.audiowindow.build(Window.hann);
+		this.audiofilter.setWindow(this.audiowindow.get());
+		this.audiofilter.buildLowpass( this.audiorate, 25);
+		console.log('IQ demodulator audio rate change to ' + this.audiorate);
 	}
 
 	computeDecimation() {
 		this.decimationFactor = 1 << 31 - Math.clz32(this.sampleRate / this.bandwidth);
+		console.log('compute decimation factor='+this.decimationFactor);
 	}
 
 	computeFrequencyXlat() {
@@ -78,11 +89,26 @@ class IQProcessor {
 	setModulation(modulation) {
 		this.updateDemodulate = true;
 		switch(modulation) {
-			case 'WFM' : this.demodulator = new FMDemod(0); break;
-			case 'FM' : this.demodulator = new FMDemod(2); break;
-			case 'AM' : this.demodulator = new AMDemod(0); break;
-			case 'USB' : this.demodulator = new SSBDemod('USB'); break;
-			case 'LSB' : this.demodulator = new SSBDemod('LSB'); break;
+			case 'WFM' : 
+				this.demodulator = new FMDemod(0); 
+				this.updateAudiorate(24000); // 24 khz for WFM
+				break;
+			case 'FM' : 
+				this.demodulator = new FMDemod(2); 
+				this.updateAudiorate(24000); // 24 khz for FM
+				break;
+			case 'AM' : 
+				this.demodulator = new AMDemod(0);
+				this.updateAudiorate(16000); // 16 khz for AM
+				break;
+			case 'USB' : 
+				this.demodulator = new SSBDemod('USB'); 
+				this.updateAudiorate(8000); // 8 khz for SSB
+				break;
+			case 'LSB' : 
+				this.demodulator = new SSBDemod('LSB'); 
+				this.updateAudiorate(8000); // 8 khz for SSB
+				break;
 		}
 		this.updateDemodulate = false;
 	}
@@ -96,6 +122,7 @@ class IQProcessor {
 		this.lpfir = new FIR(this.sampleRate / this.decimationFactor, this.size + this.order);
 		this.lpfir.setWindow(this.window.get());
 		this.lpfir.buildLowpass( this.bandwidth, this.order);
+		console.log('Bandwidth change to : ' + this.bandwidth);
 		this.updateDemodulate = false;
 
 	}
@@ -122,9 +149,18 @@ class IQProcessor {
 		this.updateDemodulate = false;
 	}
 
+	getAudiorate() {
+		return this.audiorate;
+	}
+
+	setAudiorate(value) {
+		this.audiorate = value;
+		this.updateAudiorate(value);
+	}
+
 	doResample(pcmdata) {
 		const fast = this.sampleRate / this.decimationFactor;
-		const slow = 24000;
+		const slow = this.audiorate;
 		let i = 0;
 		let i2 = 0;
 		let now_lpr = 0;
@@ -148,7 +184,9 @@ class IQProcessor {
 		if (this.updateDemodulate) {
 			return null;
 		}
-		this.xlatArr = new Float32Array(floatarr.length);
+		if ((this.xlatArr == null) || (this.xlatArr.length != floatarr.length)) {
+			this.xlatArr = new Float32Array(floatarr.length);
+		}
 		// Prepare translation only if needed
 		if (((this.xlatvectArr ==null) || (this.xlatvectArr.length != floatarr.length)) && (this.wc0 != 0)) {
 			this.xlatvectArr = new Float32Array(floatarr.length);
@@ -170,25 +208,17 @@ class IQProcessor {
 		}
 
 		// Decimate
-		let d2 = this.demodulator.decimate(this.xlatArr, this.decimationFactor);
-		// use new length
-		let demodArr = new Float32Array(d2);
-		let offset = 0;
-		for (var k = 0; k < d2; k += this.size * 2) {
-			var truncData = this.xlatArr.subarray(k, k + this.size * 2);
-			let lpfiltered = this.lpfir.doFilter(truncData);
-			const floatResult = this.demodulator.demodulate(lpfiltered);
-			demodArr.set(floatResult, offset);
-			offset += floatResult.length;			
-		}
-
-		let resample = this.doResample(demodArr.subarray(0,offset));
-		let filtered = new Float32Array(resample.length);
-		for (var f = 0; f < resample.length; f += this.size) {
-			var truncData = resample.subarray(f, f + this.size);
-			filtered.set(this.audiofilter.doFilterReal(truncData), f);
-		}
-		return filtered;
+		const d2 = this.demodulator.decimate(this.xlatArr, this.decimationFactor);
+		// use new length for decimated array
+		const decimatedArr = this.xlatArr.subarray(0, d2);
+		// low pass filter decimated array to affine result
+		const lpfiltered = this.lpfir.doFilter(decimatedArr);
+		// demodulate audio
+		const floatResult = this.demodulator.demodulate(lpfiltered);
+		// do resample to audio samplerate
+		const resample = this.doResample(floatResult);
+		// low pass audio
+		return this.audiofilter.doFilterReal(resample);
 	}
 
 	doFFT(floatarr) {

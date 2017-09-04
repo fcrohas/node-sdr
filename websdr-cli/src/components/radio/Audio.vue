@@ -28,7 +28,7 @@ export default {
 
   data () {
     return {
-      playBufferSize: 24000,
+      playBufferSize: 32000,
       sourceSampleRate: 24000,
       context: null,
       gainNode: null,
@@ -43,7 +43,8 @@ export default {
   },
   computed: {
     ...mapGetters({
-      isConnected: 'isConnected'
+      isConnected: 'isConnected',
+      audiorate: 'audiorate'
     }),
     getAvailableBufferSize () {
       return this.pcmData.length * 100 / 10
@@ -110,6 +111,34 @@ export default {
     }
   },
   watch: {
+    audiorate (value) {
+      console.log('Audio rate change to ' + value)
+      // audio rate change
+      this.sourceSampleRate = value
+      this.playBufferSize = value
+      // disconnect previous
+      Websocket.offAudioFrame()
+      // wait for websocket pcm data
+      Websocket.onAudioFrame(value, 1, (pcm) => {
+        // Add decoded pcm to list
+        this.pcmData.push(pcm)
+        // 8 s buffering
+        if ((this.pcmData.length > 10) && (!this.isPlaying)) {
+          const source = this.createPlayBuffer(this.pcmData.shift())
+          this.time = this.context.currentTime + 1
+          source.start(this.time)
+          this.time += source.buffer.duration
+          let i = 0
+          while (i < 5) {
+            const source = this.createPlayBuffer(this.pcmData.shift())
+            source.start(this.time)
+            this.time += source.buffer.duration
+            i++
+          }
+          this.isPlaying = true
+        }
+      })
+    },
     isConnected (value) {
       if (!value) {
         return
@@ -153,7 +182,7 @@ export default {
       this.context = new window.AudioContext()
       // create a gain node
       this.gainNode = this.context.createGain()
-      this.gainNode.gain.value = 2
+      this.gainNode.gain.value = 25
       // create analyzer visualization
       this.analyzer = this.context.createAnalyser()
       this.analyzer.fftSize = 128

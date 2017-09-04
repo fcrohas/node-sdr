@@ -1,12 +1,12 @@
 import websocket from './websocket'
 import opus from 'libopus.js'
 
-const ringbuffer = new Float32Array(24000 * 20)
+let ringbuffer = new Float32Array(24000 * 20)
 let ringwriteoffset = 0
 let ringreadoffset = 0
 let ringavailable = 0
 let isPlaying = false
-const playBufferSize = 24000
+let playBufferSize = 24000
 
 function getPlayDirectBuffer () {
   const output = new Float32Array(playBufferSize)
@@ -68,8 +68,19 @@ addEventListener('message', (event) => {
           postMessage({cmd: 'once', name: data.params.once, message: message, ack : data.params.callback})
         })
         break;
-      case 'audioFrame':
+      case 'offAudioFrame':
+        websocket.offEvent('pcm');
+        isPlaying = false
+        break;
+      case 'onAudioFrame':
         // Prepare Opus decompress
+        ringbuffer = new Float32Array(data.params.sampleRate * 10)
+        ringwriteoffset = 0
+        ringreadoffset = 0
+        ringavailable = 0
+        isPlaying = false
+        playBufferSize = data.params.sampleRate
+
         const decoder = new opus.Decoder({rate: data.params.sampleRate, channels: data.params.channels, unsafe: true})
         const callback = data.params.callback
         // wait for websocket pcm data
@@ -94,7 +105,7 @@ addEventListener('message', (event) => {
           ringavailable += pcm.length
           // send when when engouth data available
           if (ringavailable >= playBufferSize) {
-            postMessage({cmd: 'audioFrame', name: 'audioFrame', ack: callback, message: getPlayDirectBuffer()})
+            postMessage({cmd: 'onAudioFrame', name: 'onAudioFrame', ack: callback, message: getPlayDirectBuffer()})
           }
         })      
         break;

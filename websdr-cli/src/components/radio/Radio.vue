@@ -10,6 +10,7 @@
         <audio-stream></audio-stream>
     </vue-draggable-resizable>
    </v-container>
+  
 </template>
 
 <script>
@@ -17,10 +18,11 @@ import { mapGetters, mapActions } from 'vuex'
 import Waterfall from './Waterfall'
 import Control from './Control'
 import AudioStream from './Audio'
+import VueGridLayout from 'vue-grid-layout'
 
 export default {
   name: 'Radio',
-  components: { Waterfall, Control, AudioStream },
+  components: { Waterfall, Control, AudioStream, 'GridLayout': VueGridLayout.GridLayout, 'GridItem': VueGridLayout.GridItem },
   computed: mapGetters({
     tunedFrequency: 'tunedFrequency',
     currentBandwidth: 'currentBandwidth',
@@ -35,7 +37,6 @@ export default {
     this.connect(this.$route.params.serialNumber)
   },
   data: () => ({
-    lorem: `Lorem ipsum dolor sit amet, mel at clita quando. Te sit oratio vituperatoribus, nam ad ipsum posidonium mediocritatem, explicari dissentiunt cu mea. Repudiare disputationi vim in, mollis iriure nec cu, alienum argumentum ius ad. Pri eu justo aeque torquatos.`
   })
 }
 </script>

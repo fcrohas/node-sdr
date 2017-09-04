@@ -2,19 +2,16 @@
   <v-card class="elevation-0 full-size">
     <v-card-text class="full-size">
       <v-container fluid class="full-size">
-        <v-layout class="display full-size">
+        <v-layout row wrap class="display full-size">
           <v-flex xs12 class="full-size">
             <span class="frequency">{{tunedFrequency}}<span class="tunerFrequency">Tuner frequency : {{centerFrequency}}</span></span>
           </v-flex>
           <v-flex xs12 class="full-size">
-            <p>Modulation</p>
-            <v-btn v-model="modulation">
-                <v-btn flat value="am">AM</v-btn>
-                <v-btn flat value="fm">FM</v-btn>
-                <v-btn flat value="wfm">WFM</v-btn>
-                <v-btn flat value="usb">USB</v-btn>
-                <v-btn flat value="lsb">LSB</v-btn>
-            </v-btn>
+            <v-btn flat value="am" @click="changeModulation('AM')">AM</v-btn>
+            <v-btn flat value="fm" @click="changeModulation('FM')">FM</v-btn>
+            <v-btn flat value="wfm" @click="changeModulation('WFM')">WFM</v-btn>
+            <v-btn flat value="usb" @click="changeModulation('USB')">USB</v-btn>
+            <v-btn flat value="lsb" @click="changeModulation('LSB')">LSB</v-btn>
           </v-flex>
           <v-flex>
             <v-btn icon @click="stop()">
@@ -47,6 +44,7 @@ export default {
   methods: {
     ...mapActions({
       changeCenterFrequency: 'changeCenterFrequency',
+      changeModulation: 'changeModulation',
       getCapabilities: 'getCapabilities',
       disconnect: 'disconnect'
     }),
@@ -90,8 +88,8 @@ export default {
 }
 .tunerFrequency {
     position: absolute;
-    top: 88px;
-    left: 30px;
+    top: 60px;
+    left: 10px;
     font-size: 8px;
     color: lightgray;
 }

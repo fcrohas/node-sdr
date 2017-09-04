@@ -12,7 +12,7 @@ class AMDemod extends Demodulator  {
 		for (let i = 0; i < buffer.length; i+=2) {
 			result[i/2] = Math.sqrt(buffer[i] * buffer[i] + buffer[i+1] * buffer[i + 1]);
 		}
-		return this.dc_block_filter(result);
+		return result; // this.dc_block_filter(
 	}
 
 }

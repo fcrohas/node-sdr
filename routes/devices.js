@@ -77,7 +77,9 @@ router.get('/open/:serialNumber', function(req, res, next) {
 					device.start();
 					// On audio buffer complete
 					socketRouter.audio.on('complete', (compressed) => {
-						socket.emit('pcm',compressed);
+						if (compressed!=null) {
+							socket.emit('pcm',compressed);
+						}
 					});
 
 					device.listen((data) => {
@@ -90,7 +92,9 @@ router.get('/open/:serialNumber', function(req, res, next) {
 						// Demodulate signal
 						if (iqprocessor.canDemodulate()) {
 							var pcmOut = iqprocessor.doDemodulate(floatarr);
-							socketRouter.audio.encode(pcmOut);
+							if (pcmOut != null) {
+								socketRouter.audio.encode(pcmOut);
+							}
 						}
 					});
 				});
@@ -101,21 +105,30 @@ router.get('/open/:serialNumber', function(req, res, next) {
 					for (let i = 0; i < messages.length; i++) {
 						switch(messages[i].type) {
 							case 'samplerate' : 
-									device.setSampleRate(messages[i].value);
-									iqprocessor.setSampleRate(messages[i].value);
-									break;
-							case 'centerfrequency' : 
-									device.setCenterFrequency(messages[i].value); 
-									iqprocessor.setCenterFrequency(messages[i].value); 
+								device.setSampleRate(messages[i].value);
+								iqprocessor.setSampleRate(messages[i].value);
 								break;
-							case 'tunergain' : device.setGain(messages[i].value); break;
-							case 'capabilities' : result = device.getCapabilities(); break;
-							case 'modulation' : iqprocessor.setModulation(messages[i].value); break;
-							case 'bandwidth' : iqprocessor.setBandwidth(messages[i].value); break;
+							case 'centerfrequency' : 
+								device.setCenterFrequency(messages[i].value); 
+								iqprocessor.setCenterFrequency(messages[i].value); 
+								break;
+							case 'tunergain' : 
+								device.setGain(messages[i].value); 
+								break;
+							case 'capabilities' : 
+								result = device.getCapabilities(); 
+								break;
+							case 'modulation' : 
+								iqprocessor.setModulation(messages[i].value); 
+								socketRouter.audio.setSamplerate(iqprocessor.getAudiorate());
+								break;
+							case 'bandwidth' : 
+								iqprocessor.setBandwidth(messages[i].value); 
+								break;
 							case 'frequency' : 
-									device.setFrequency(messages[i].value); 
-									iqprocessor.setFrequency(messages[i].value); 
-									break;
+								device.setFrequency(messages[i].value); 
+								iqprocessor.setFrequency(messages[i].value); 
+								break;
 						}
 					}
 					callback(result);

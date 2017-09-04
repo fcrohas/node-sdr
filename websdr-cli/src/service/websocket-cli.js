@@ -16,7 +16,7 @@ class WebsocketClient {
     this.worker.addEventListener('message', (event) => {
       this.onMessage(event)
     })
-    this.callback = {'connect': [], 'disconnect': [], 'send': [], 'emit': [], 'on': [], 'once': [], 'audioFrame': []}
+    this.callback = {'connect': [], 'disconnect': [], 'send': [], 'emit': [], 'on': [], 'once': [], 'onAudioFrame': []}
   }
 
   connect (serial) {
@@ -77,7 +77,7 @@ class WebsocketClient {
       }
       // If not a callabck type
       // Simply clear array callback
-      if ((type !== 'on') && (type !== 'audioFrame')) {
+      if ((type !== 'on') && (type !== 'onAudioFrame')) {
         this.callback[type][name][id] = null
       }
     }
@@ -90,9 +90,14 @@ class WebsocketClient {
 
   onAudioFrame (sampleRate, channelsCount, callback) {
     // Register the callback
-    const id = this.register('audioFrame', 'audioFrame', callback)
+    const id = this.register('onAudioFrame', 'onAudioFrame', callback)
     // Start streaming
-    this.worker.postMessage({cmd: 'audioFrame', params: {sampleRate: sampleRate, channels: channelsCount, callback: id}})
+    this.worker.postMessage({cmd: 'onAudioFrame', params: {sampleRate: sampleRate, channels: channelsCount, callback: id}})
+  }
+
+  offAudioFrame () {
+    this.worker.postMessage({cmd: 'offAudioFrame'})
+    this.callback['onAudioFrame']['onAudioFrame'] = []
   }
 }
 

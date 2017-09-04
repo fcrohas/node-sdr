@@ -10,24 +10,37 @@ class Audio {
 		this.encoder = new Encoder({rate:this.audiorate, channels: 1, unsafe: true});
 		this.decoder = new Decoder({rate:this.audiorate, channels: 1});
 		// 10 ms frame_size
-		this.frame_size = 480; 
+		this.frame_size = this.audiorate / 100; 
 		// 5s buffer ? 
-		this.buffer = new Float32Array(24000);
+		this.buffer = new Float32Array(this.audiorate);
 		this.bufferOffset = 0;
 		// Callabck events
 		this.callback = [];
 		this.previous = [];
+		this.update = false;
 	}
 
-	get samplerate() {
+	getSamplerate() {
 		return this.audiorate;
 	}
 
-	set samplerate(value) {
+	setSamplerate(value) {
+		console.log('change audio rate to ' + value);
+		this.update = true;
 		this.audiorate = value;
+		this.encoder = new Encoder({rate:this.audiorate, channels: 1, unsafe: true});		
+		// 10 ms frame_size
+		this.frame_size = value / 100; 
+		// 5s buffer ? 
+		this.buffer = new Float32Array(value);
+		this.bufferOffset = 0;
+		this.update = false;
 	}
 
 	encode(pcm) {
+		if (this.update) {
+			return null;
+		}
 		if (this.bufferOffset + pcm.length <= this.buffer.length) {
 			this.buffer.set(pcm, this.bufferOffset);
 			this.bufferOffset += pcm.length;

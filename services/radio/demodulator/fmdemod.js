@@ -82,9 +82,9 @@ class FMDemod extends Demodulator {
 		for (let i = 0; i < pcm.length; i++) {
 			d = pcm[i] - this.avg;
 			if (d > 0) {
-				this.avg = this.avg + (d + this.deemph_a/2.0)/this.deemph_a;
+				this.avg = this.avg + (d + this.deemph_a / 2.0) / this.deemph_a;
 			} else {
-				this.avg = this.avg + (d - this.deemph_a/2.0)/this.deemph_a;
+				this.avg = this.avg + (d - this.deemph_a / 2.0) / this.deemph_a;
 			}
 			pcm[i] = this.avg;
 		}
@@ -103,7 +103,7 @@ class FMDemod extends Demodulator {
 
 		this.pre_r = pr;
 		this.pre_j = pj;
-		return result; // this.deemph_filter(
+		return result;
 	}
 }
 
