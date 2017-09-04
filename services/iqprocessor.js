@@ -197,6 +197,7 @@ class IQProcessor {
 		}
 		var fftOut = new Uint8Array(this.size);		
 		let result = new Uint8Array(this.size);
+		let prevresult = new Uint8Array(this.size);
 		for (var k = 0; k < floatarr.length; k += this.size * 2) {
 			// fft size is 512 so double buffer
 			var truncData = floatarr.subarray(k, k + this.size * 2);
@@ -210,20 +211,21 @@ class IQProcessor {
 				//const log = 20 * Math.log10(magnitude);
 				// switch result here
 				if (i < transformSize) {
-					result[j + halfFft] = magnitude;
+					result[j + halfFft] = magnitude * 255;
 				} else {
-					result[j - halfFft] = magnitude;
+					result[j - halfFft] = magnitude * 255;
 				}
 				j++;
 			}
 			// Average result
 			if (k == 0) {
 				// store fft for this chunk
-				fftOut.set(result);
+				prevresult.set(result);
 			} else {
 				// average results
 				for (let a = 0; a < fftOut.length; a++) {
-					fftOut[a] += result[a] / 2;
+					fftOut[a] = (prevresult[a] + result[a]) / 2;
+					prevresult.set(fftOut);
 				}
 			}
 		}

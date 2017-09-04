@@ -1,5 +1,5 @@
 <template>
-  <v-app toolbar footer>
+  <v-app toolbar footer fill-height>
     <main-menu :display="displayMenu"></main-menu>
     <v-toolbar class="indigo" dark>
       <v-toolbar-title>
@@ -39,6 +39,9 @@ export default {
 }
 </script>
 
-<style>
-
+<style lang="css" scoped>
+.full-size {
+  width: 100%;
+  height: 100%;
+}
 </style>

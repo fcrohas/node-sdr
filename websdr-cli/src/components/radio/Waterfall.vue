@@ -7,15 +7,6 @@
             <canvas ref="overlay" class="freq-overlay"></canvas>
           </div>
         </v-flex>
-        <v-flex xs12>
-          <v-toolbar class="white" dense>
-            <v-slider prepend-icon="volume_up" min="0" max="100" v-model="level"></v-slider>
-            <v-spacer></v-spacer>
-            <v-btn icon @click="stop()">
-              <v-icon>exit_to_app</v-icon>
-            </v-btn>
-            </v-toolbar>
-        </v-flex>
       </v-layout>
     </v-container>
 </template>
@@ -23,7 +14,6 @@
 <script>
 import { mapGetters, mapActions } from 'vuex'
 import Websocket from '../../service/websocket-cli'
-import Service from '../../service/api'
 
 export default {
   name: 'waterfall',
@@ -64,15 +54,6 @@ export default {
       'connect',
       'disconnect'
     ]),
-    stop: function () {
-      // Close websocket
-      this.disconnect()
-      // close device
-      Service.get('/devices/close/' + this.serialNumber).then(response => {
-        this.$router.push({path: '/'})
-      })
-      this.disconnected = true
-    },
     HSVtoRGB: function (h, s, v) {
       var r, g, b, i, f, p, q, t
       if (arguments.length === 1) {
@@ -123,7 +104,38 @@ export default {
         b: Math.round(b * 255)
       }
     },
+    drawTunedFrequency (ctx) {
+      // compute binSize
+      const binSize = this.sampleRate / this.bins
+      // bandwidth in pixel
+      const bwPix = this.currentBandwidth / binSize
+      // Compute frequency diff
+      const diff = this.tunedFrequency - this.centerFrequency
+      // convert to pixel
+      const tunedFrequencyPosition = diff / binSize + this.bins / 2
+      ctx.beginPath()
+      // Draw frequency selection
+      ctx.lineWidth = '10'
+      ctx.strokeStyle = 'red'
+      ctx.moveTo(tunedFrequencyPosition, 28)
+      ctx.lineTo(tunedFrequencyPosition, this.height - 88)
+      ctx.stroke()
+      // draw lower bandwidth
+      ctx.beginPath()
+      ctx.lineWidth = '4'
+      ctx.strokeStyle = 'white'
+      ctx.moveTo(tunedFrequencyPosition - bwPix / 2, 28)
+      ctx.lineTo(tunedFrequencyPosition - bwPix / 2, this.height - 88)
+      // draw upper bandwidth
+      ctx.moveTo(tunedFrequencyPosition + bwPix / 2, 28)
+      ctx.lineTo(tunedFrequencyPosition + bwPix / 2, this.height - 88)
+      ctx.stroke()
+      // slight overlay of area
+      ctx.fillStyle = 'rgba(225,225,255,0.2)'
+      ctx.fillRect(tunedFrequencyPosition - bwPix / 2, 28, bwPix, this.height - 116)
+    },
     drawFrequency: function (ctx, overlay) {
+      this.drawTunedFrequency(ctx)
       // limit bounding
       if (overlay.x < 20) return
       if (overlay.x > 20 + this.width) return
@@ -140,7 +152,7 @@ export default {
       ctx.stroke()
       // draw lower bandwidth
       ctx.beginPath()
-      ctx.lineWidth = '8'
+      ctx.lineWidth = '4'
       ctx.strokeStyle = 'white'
       ctx.moveTo(overlay.x - bwPix / 2, 28)
       ctx.lineTo(overlay.x - bwPix / 2, this.height - 88)
@@ -149,7 +161,7 @@ export default {
       ctx.lineTo(overlay.x + bwPix / 2, this.height - 88)
       ctx.stroke()
       // slight overlay of area
-      ctx.fillStyle = 'rgba(225,225,255,0.4)'
+      ctx.fillStyle = 'rgba(225,225,255,0.2)'
       ctx.fillRect(overlay.x - bwPix / 2, 28, bwPix, this.height - 116)
     },
     getMousePos: function (canvas, evt) {
@@ -251,7 +263,8 @@ export default {
     centerFrequency () {
       this.drawWaterfall(this.$refs.spectrum, this.fftdata)
     },
-    tunedFrequency () {
+    tunedFrequency (value) {
+      this.drawTunedFrequency(this.$refs.overlay.getContext('2d'))
     },
     isConnected (value) {
       if (!value) {
@@ -267,7 +280,7 @@ export default {
           // Convert buffer to RGBA
           for (let c = 0; c < line.length; c++) {
             // HSV
-            const color = this.HSVtoRGB(this.level / 10 - line[c] / 510, 0.7, 0.8)
+            const color = this.HSVtoRGB(this.level / 10 - line[c] / 255, 0.7, 0.8)
             this.bufferRGBA.set([color.r, color.g, color.b, 255], c * 4)
           }
           this.reDraw()

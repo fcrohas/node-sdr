@@ -10,7 +10,7 @@ class Audio {
 		this.encoder = new Encoder({rate:this.audiorate, channels: 1, unsafe: true});
 		this.decoder = new Decoder({rate:this.audiorate, channels: 1});
 		// 10 ms frame_size
-		this.frame_size = 240; 
+		this.frame_size = 480; 
 		// 5s buffer ? 
 		this.buffer = new Float32Array(24000);
 		this.bufferOffset = 0;

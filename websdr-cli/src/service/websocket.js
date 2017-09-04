@@ -17,7 +17,7 @@ class Websocket {
   }
 
   connect (serial) {
-    this.socket = Socket.connect('http://localhost:3000/socket/device/' + serial)
+    this.socket = Socket.connect('http://192.168.0.49:3000/socket/device/' + serial)
     this.serial = serial
   }
 

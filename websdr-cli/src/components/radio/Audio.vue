@@ -1,22 +1,19 @@
 <template>
-  <v-container fluid>
-    <v-layout>
-      <v-flex xs12 align-end flexbox>
-        <v-progress-circular
-            v-bind:size="100"
-            v-bind:width="15"
-            v-bind:rotate="360"
-            v-bind:value="getAvailableBufferSize"
-            class="teal--text"
-          >
-            {{ getAvailableBufferSize }} %
-        </v-progress-circular>
-      </v-flex>
-      <v-flex xs12 align-end flexbox>
-        <span>Buffer status : {{getBufferStatus}}</span>
-      </v-flex>
-      <v-flex xs12 align-end flexbox>
-        <canvas ref="audioSpectrum" class="audioSpectrum"></canvas>
+  <v-container fluid class="full-size">
+    <v-layout class="full-size">
+      <v-flex xs12 align-end flexbox class="full-size">
+        <div class="full-size">
+          <canvas ref="audioSpectrum" class="audioSpectrum"></canvas>
+          <v-progress-circular
+              v-bind:size="70"
+              v-bind:width="15"
+              v-bind:rotate="360"
+              v-bind:value="getAvailableBufferSize"
+              class="teal--text buffer"
+            >
+              {{ getAvailableBufferSize }}
+          </v-progress-circular>
+        </div>
       </v-flex>
     </v-layout>
   </v-container>
@@ -144,22 +141,25 @@ export default {
     }
   },
   mounted: function () {
-    // Setup canvas audio analyzer
-    const canvasCtx = this.$refs.audioSpectrum.getContext('2d')
-    this.$refs.audioSpectrum.width = this.width
-    this.$refs.audioSpectrum.height = this.height
-    // Prepare webaudio API
-    window.AudioContext = window.AudioContext || window.webkitAudioContext
-    // Audio context
-    this.context = new window.AudioContext()
-    // create a gain node
-    this.gainNode = this.context.createGain()
-    this.gainNode.gain.value = 2
-    // create analyzer visualization
-    this.analyzer = this.context.createAnalyser()
-    this.analyzer.fftSize = 128
-    this.fftArray = new Uint8Array(this.analyzer.frequencyBinCount)
-    this.draw(canvasCtx)
+    if (this.$route.params != null) {
+      this.serialNumber = this.$route.params.serialNumber
+      // Setup canvas audio analyzer
+      const canvasCtx = this.$refs.audioSpectrum.getContext('2d')
+      this.$refs.audioSpectrum.width = this.width
+      this.$refs.audioSpectrum.height = this.height
+      // Prepare webaudio API
+      window.AudioContext = window.AudioContext || window.webkitAudioContext
+      // Audio context
+      this.context = new window.AudioContext()
+      // create a gain node
+      this.gainNode = this.context.createGain()
+      this.gainNode.gain.value = 2
+      // create analyzer visualization
+      this.analyzer = this.context.createAnalyser()
+      this.analyzer.fftSize = 128
+      this.fftArray = new Uint8Array(this.analyzer.frequencyBinCount)
+      this.draw(canvasCtx)
+    }
   },
   destroyed: function () {
     this.context.close()
@@ -169,10 +169,22 @@ export default {
 </script>
 
 <style lang="css" scoped>
+.full-size {
+  width: 100%;
+  height: 100%;
+  padding: 0px;
+}
 .audioSpectrum {
   position: absolute;
   border:1px solid #BBB;
   width: 100%;
   height: 100%;
+  z-index: 0;
+}
+.buffer {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1;
 }
 </style>

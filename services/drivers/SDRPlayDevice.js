@@ -7,10 +7,11 @@ class SDRPlayDevice extends Device {
 		this.driver = driver;
 		this.device = sdrplaydevice;
 		this.streamCallback = null;
-		this.ASYNC_BUF_SIZE = 32 * 512;
-		this.ASYNC_BUF_NUMBER = 16;
+		this.ASYNC_BUF_SIZE = 8 * 2000;
+		this.ASYNC_BUF_NUMBER = 24;
 		this.bufferData = new Int16Array(this.ASYNC_BUF_NUMBER * this.ASYNC_BUF_SIZE);
 		this.bufferOffset = 0;
+		this.started = false;
 	}
 
 	static getDriverName() {
@@ -62,69 +63,64 @@ class SDRPlayDevice extends Device {
 			this.driver.DecimateControl(1, 2, 0);
 			this.sampleRate = this.sampleRate * 2;
 		}
-		this.driver.StreamInit(58, this.sampleRate / 1000000, this.centerFrequency / 1000000,1536,0,3,28,0,128, (xibuffer,xqbuffer,firstSampleNum,grChanged,rfChanged,fsChanged,numSamples, reset) => {
+		this.driver.StreamInit(58, this.sampleRate / 1000000, this.centerFrequency / 1000000,1536,0,3,28,0,128, (iqbuffer,bufferSize,firstSampleNum,grChanged,rfChanged,fsChanged,numSamples, reset) => {
+			this.started = true;
 			if (this.streamCallback != null) {
-				// Convert arraybuffedr to int16array as it is short
-				const xi = new Int16Array(xibuffer.buffer);
-				const xq = new Int16Array(xqbuffer.buffer);
-				// New buffer end 
-				var end = this.bufferOffset + (numSamples * 2);
-				var count2 = end - (this.ASYNC_BUF_SIZE * this.ASYNC_BUF_NUMBER); // sample after end of buffer
-				if (count2 < 0) count2 = 0; // not at the end of buffer 
-				var count1 = (numSamples * 2) - count2;  // place sample next to offset
-				/* flag */
-				//var new_buf_flag = ((this.bufferOffset & (this.ASYNC_BUF_SIZE - 1)) < (end & (this.ASYNC_BUF_SIZE - 1))) ? 0 : 1;
-				var new_buf_flag = (count2 > 0) ? 1 : 0;
-
-				var input_index = 0;
-				// Interleave at buffer offset
-				for (var i = 0; i < count1 / 2; i++) {
-					// Copy I low / high part
-					this.bufferData[this.bufferOffset] = xi[input_index];
-					this.bufferOffset++;
-					// Copy Q low / high part
-					this.bufferData[this.bufferOffset] = xq[input_index];
-					this.bufferOffset++;
-					input_index++;
-				}
-
-				// merge I/Q buffer
-				if (new_buf_flag) {
-					// end = this.bufferOffset + this.ASYNC_BUF_SIZE * (this.ASYNC_BUF_NUMBER - 1);
-					// end &= this.ASYNC_BUF_SIZE * this.ASYNC_BUF_NUMBER - 1;
-					// end &= ~(this.ASYNC_BUF_SIZE - 1);					
-					//var arr = this.bufferData.slice(end, this.ASYNC_BUF_SIZE);
-					// callback
-					this.streamCallback(this.bufferData);
-				}
-
-				if(this.bufferOffset >= this.ASYNC_BUF_SIZE * this.ASYNC_BUF_NUMBER) {
-					this.bufferOffset = 0;
-				}
-
-				// remaining data
-				for (var i = 0; i < count2 / 2; i++) {
-					// Copy I low / high part
-					this.bufferData[this.bufferOffset] = xi[input_index];
-					this.bufferOffset++;
-					// Copy Q low / high part
-					this.bufferData[this.bufferOffset] = xq[input_index];
-					this.bufferOffset++;
-					input_index++;
-				}				
+				this.streamCallback(new Int16Array(iqbuffer.buffer));
 			}
 		}, function(gRdB, lnagRdB) {
 			console.log("gRdb="+gRdB+" lnagRdB="+lnagRdB);
-		});
+		}, 32*16384, 16);
 	}
 
 	stop() {
 		this.driver.StreamUninit();
+		this.started = false;
 	}	
 
 	listen(callback) {
 		this.streamCallback = callback;
 	}
+
+	setCenterFrequency(value) {
+		super.setCenterFrequency(value);
+		if (this.started) {
+			this.driver.SetRf(this.centerFrequency, 1, 0);
+		}
+	}
+
+	getCapabilities() {
+		return [
+		{
+			type: 'range',
+			name: 'gainReduction',
+			values: '0-59',
+			default: 58
+		},
+		{
+			type: 'range',
+			name: 'sampleRate',
+			values: '2000000-10000000',
+			default: 2048000
+		},
+		{
+			type: 'range',
+			name: 'frequency',
+			values: this.tuningRange
+
+		},
+		{
+			type: 'choice',
+			name: 'antenna',
+			values: ['Port A', 'Port B', 'HI-Z']
+		},
+		{
+			type: 'choice',
+			name: 'filter',
+			values: this.device.Bw_MHzT
+		}];
+	}
+
 }
 
 module.exports = SDRPlayDevice;

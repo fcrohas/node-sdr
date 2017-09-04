@@ -1,19 +1,15 @@
 <template>
-	<v-container fluid>
-		<v-layout fill-height>
-			<v-flex md12 fill-height>
-				<vue-draggable-resizable :parent="false" :resizable="false" :draggable="false" :w="800" :h="400" :x="500" :y="500">
-					<waterfall></waterfall>
-				</vue-draggable-resizable>
-				<vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="400" :h="300" :x="100" :y="100">
-					<control></control>
-				</vue-draggable-resizable>
-				<vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="400" :h="200" :x="800" :y="200">
-					<audio-stream></audio-stream>
-				</vue-draggable-resizable>
-			</v-flex>
-		</v-layout>
-	</v-container>
+  <v-container fluid grid-list-md>
+   <vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="800" :h="400" :x="500" :y="500">
+        <waterfall></waterfall>
+    </vue-draggable-resizable>
+    <vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="400" :h="300" :x="100" :y="100">
+        <control></control>
+    </vue-draggable-resizable>
+    <vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="400" :h="200" :x="800" :y="200">
+        <audio-stream></audio-stream>
+    </vue-draggable-resizable>
+   </v-container>
 </template>
 
 <script>
@@ -37,12 +33,16 @@ export default {
   mounted: function () {
     // Connect to socket serial number
     this.connect(this.$route.params.serialNumber)
-  }
+  },
+  data: () => ({
+    lorem: `Lorem ipsum dolor sit amet, mel at clita quando. Te sit oratio vituperatoribus, nam ad ipsum posidonium mediocritatem, explicari dissentiunt cu mea. Repudiare disputationi vim in, mollis iriure nec cu, alienum argumentum ius ad. Pri eu justo aeque torquatos.`
+  })
 }
 </script>
 
 <style lang="css" scoped>
-.full-height {
-	height: 100%;
+.full-size {
+  width: 100%;
+  height: 100%;
 }
 </style>
