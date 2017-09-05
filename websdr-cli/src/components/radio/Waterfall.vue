@@ -28,7 +28,8 @@ export default {
     currentBandwidth: 'currentBandwidth',
     centerFrequency: 'centerFrequency',
     isConnected: 'isConnected',
-    sampleRate: 'sampleRate'
+    sampleRate: 'sampleRate',
+    modulationType: 'modulationType'
   }),
   data () {
     return {
@@ -124,15 +125,25 @@ export default {
       ctx.beginPath()
       ctx.lineWidth = '4'
       ctx.strokeStyle = 'white'
-      ctx.moveTo(tunedFrequencyPosition - bwPix / 2, 28)
-      ctx.lineTo(tunedFrequencyPosition - bwPix / 2, this.height - 88)
+      if (this.modulationType !== 'USB') {
+        ctx.moveTo(tunedFrequencyPosition - bwPix / 2, 28)
+        ctx.lineTo(tunedFrequencyPosition - bwPix / 2, this.height - 88)
+      }
       // draw upper bandwidth
-      ctx.moveTo(tunedFrequencyPosition + bwPix / 2, 28)
-      ctx.lineTo(tunedFrequencyPosition + bwPix / 2, this.height - 88)
+      if (this.modulationType !== 'LSB') {
+        ctx.moveTo(tunedFrequencyPosition + bwPix / 2, 28)
+        ctx.lineTo(tunedFrequencyPosition + bwPix / 2, this.height - 88)
+      }
       ctx.stroke()
       // slight overlay of area
       ctx.fillStyle = 'rgba(225,225,255,0.2)'
-      ctx.fillRect(tunedFrequencyPosition - bwPix / 2, 28, bwPix, this.height - 116)
+      if (this.modulationType === 'USB') {
+        ctx.fillRect(tunedFrequencyPosition, 28, bwPix / 2, this.height - 116)
+      } else if (this.modulationType === 'LSB') {
+        ctx.fillRect(tunedFrequencyPosition - bwPix / 2, 28, bwPix / 2, this.height - 116)
+      } else {
+        ctx.fillRect(tunedFrequencyPosition - bwPix / 2, 28, bwPix, this.height - 116)
+      }
     },
     drawFrequency: function (ctx, overlay) {
       this.drawTunedFrequency(ctx)
@@ -154,15 +165,25 @@ export default {
       ctx.beginPath()
       ctx.lineWidth = '4'
       ctx.strokeStyle = 'white'
-      ctx.moveTo(overlay.x - bwPix / 2, 28)
-      ctx.lineTo(overlay.x - bwPix / 2, this.height - 88)
+      if (this.modulationType !== 'USB') {
+        ctx.moveTo(overlay.x - bwPix / 2, 28)
+        ctx.lineTo(overlay.x - bwPix / 2, this.height - 88)
+      }
       // draw upper bandwidth
-      ctx.moveTo(overlay.x + bwPix / 2, 28)
-      ctx.lineTo(overlay.x + bwPix / 2, this.height - 88)
+      if (this.modulationType !== 'LSB') {
+        ctx.moveTo(overlay.x + bwPix / 2, 28)
+        ctx.lineTo(overlay.x + bwPix / 2, this.height - 88)
+      }
       ctx.stroke()
       // slight overlay of area
       ctx.fillStyle = 'rgba(225,225,255,0.2)'
-      ctx.fillRect(overlay.x - bwPix / 2, 28, bwPix, this.height - 116)
+      if (this.modulationType === 'USB') {
+        ctx.fillRect(overlay.x, 28, bwPix / 2, this.height - 116)
+      } else if (this.modulationType === 'LSB') {
+        ctx.fillRect(overlay.x - bwPix / 2, 28, bwPix / 2, this.height - 116)
+      } else {
+        ctx.fillRect(overlay.x - bwPix / 2, 28, bwPix, this.height - 116)
+      }
     },
     getMousePos: function (canvas, evt) {
       var rect = canvas.getBoundingClientRect()
@@ -260,6 +281,9 @@ export default {
     }
   },
   watch: {
+    modulationType (value) {
+      this.drawTunedFrequency(this.$refs.overlay.getContext('2d'))
+    },
     centerFrequency () {
       this.drawWaterfall(this.$refs.spectrum, this.fftdata)
     },

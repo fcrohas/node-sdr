@@ -28,7 +28,7 @@ export default {
 
   data () {
     return {
-      playBufferSize: 32000,
+      playBufferSize: 24000,
       sourceSampleRate: 24000,
       context: null,
       gainNode: null,

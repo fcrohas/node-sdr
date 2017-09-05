@@ -18,11 +18,10 @@ import { mapGetters, mapActions } from 'vuex'
 import Waterfall from './Waterfall'
 import Control from './Control'
 import AudioStream from './Audio'
-import VueGridLayout from 'vue-grid-layout'
 
 export default {
   name: 'Radio',
-  components: { Waterfall, Control, AudioStream, 'GridLayout': VueGridLayout.GridLayout, 'GridItem': VueGridLayout.GridItem },
+  components: { Waterfall, Control, AudioStream },
   computed: mapGetters({
     tunedFrequency: 'tunedFrequency',
     currentBandwidth: 'currentBandwidth',

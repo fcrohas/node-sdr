@@ -30,10 +30,10 @@ class IQProcessor {
 	updateAudiorate(audiorate) {
 		this.audiorate = audiorate;
 		this.audiofilter = new FIR(this.audiorate);
-		this.audiowindow = new Window(25);
-		this.audiowindow.build(Window.hann);
+		this.audiowindow = new Window(21);
+		this.audiowindow.build(Window.blackman);
 		this.audiofilter.setWindow(this.audiowindow.get());
-		this.audiofilter.buildLowpass( this.audiorate, 25);
+		this.audiofilter.buildLowpass( this.audiorate / 2, 21);
 		console.log('IQ demodulator audio rate change to ' + this.audiorate);
 	}
 
@@ -118,7 +118,7 @@ class IQProcessor {
 		this.bandwidth = bandwidth;
 		this.computeDecimation();
 		this.window = new Window(this.order);
-		this.window.build(Window.hamming);
+		this.window.build(Window.hann);
 		this.lpfir = new FIR(this.sampleRate / this.decimationFactor, this.size + this.order);
 		this.lpfir.setWindow(this.window.get());
 		this.lpfir.buildLowpass( this.bandwidth, this.order);
