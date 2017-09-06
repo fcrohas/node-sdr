@@ -74,7 +74,7 @@ class SDRPlayDevice extends Device {
 			}
 		}, function(gRdB, lnagRdB) {
 			console.log("gRdb="+gRdB+" lnagRdB="+lnagRdB);
-		}, 64*16384, 16);
+		}, 32*16384, 16);
 	}
 
 	stop() {

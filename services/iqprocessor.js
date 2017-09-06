@@ -26,6 +26,8 @@ class IQProcessor {
 		this.wc0 = 0;
 		this.computeDecimation();
 		this.updateAudiorate(this.audiorate);
+		this.now_lpr = 0;
+		this.prev_lpr_index = 0;
 	}
 
 	updateAudiorate(audiorate) {
@@ -96,7 +98,7 @@ class IQProcessor {
 				this.updateAudiorate(24000); // 24 khz for WFM
 				break;
 			case 'FM' : 
-				this.demodulator = new FMDemod(2); 
+				this.demodulator = new FMDemod(0); 
 				this.intermediate = 256000;
 				this.updateAudiorate(24000); // 24 khz for FM
 				break;
@@ -169,18 +171,16 @@ class IQProcessor {
 		const slow = this.audiorate;
 		let i = 0;
 		let i2 = 0;
-		let now_lpr = 0;
-		let prev_lpr_index = 0;
 		while( i < pcmdata.length) {
-			now_lpr += pcmdata[i];
+			this.now_lpr += pcmdata[i];
 			i++;
-			prev_lpr_index += slow;
-			if (prev_lpr_index < fast) {
+			this.prev_lpr_index += slow;
+			if (this.prev_lpr_index < fast) {
 				continue;
 			}
-			pcmdata[i2] = now_lpr / (fast/slow);
-			prev_lpr_index -= fast;
-			now_lpr = 0;
+			pcmdata[i2] = this.now_lpr / (fast/slow);
+			this.prev_lpr_index -= fast;
+			this.now_lpr = 0;
 			i2 += 1;
 		}
 		return pcmdata.subarray(0, i2);

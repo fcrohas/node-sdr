@@ -49,15 +49,17 @@ class Audio {
 			//subarray is safe here as it is only in this submethod
 			if (this.buffer.length - this.bufferOffset > 0) {
 				this.buffer.set(pcm.subarray(0, this.buffer.length - this.bufferOffset), this.bufferOffset);
-				this.bufferOffset += pcm.length
+				this.bufferOffset += pcm.length;
 			}
 			// Compress 1s frame per frame size then send
+			console.time('audioComplete');
 			for (let i = 0; i < this.buffer.length; i += this.frame_size) {
 				const compressed = this.encoder.encode(this.buffer.subarray(i, i + this.frame_size));
 				if (this.callback['complete'] != null) {
 					this.callback['complete'](compressed);
 				}
 			}
+			console.timeEnd('audioComplete');			
 			// this.save('./data/test.wav');
 			// save remaining data
 			if (this.bufferOffset > this.buffer.length) {

@@ -58,8 +58,8 @@ class DummyDevice extends Device {
 			let interleavedArr = new Float32Array(result.channelData[0].length * 2);			
 			// Prepare interleave data
 			let c = 0;
-			const chunkIQ = 32768;
-			const chunkIQ2 = 16384;
+			const chunkIQ = 16 * 16384;
+			const chunkIQ2 = 8 * 16384;
 			for (let i = 0; i < result.channelData[0].length; i += chunkIQ2) {
 				const chunkI = result.channelData[0].subarray(i, i + chunkIQ2);
 				const chunkQ = result.channelData[1].subarray(i, i + chunkIQ2);
@@ -79,7 +79,7 @@ class DummyDevice extends Device {
 				} else {
 					i = 0;
 				}
-				//this.sleep(64);
+				this.sleep(64);
 			}
 
 			console.log('End of streaming...');			

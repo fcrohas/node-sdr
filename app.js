@@ -1,3 +1,4 @@
+require('console-stamp')(console, '[HH:MM:ss.l]');
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
