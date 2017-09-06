@@ -4,7 +4,6 @@ class AMDemod extends Demodulator  {
 
 	constructor(mode) {
 		super();
-		this.dc_avg = 0;
 	}
 
 	demodulate(buffer) {
@@ -12,7 +11,7 @@ class AMDemod extends Demodulator  {
 		for (let i = 0; i < buffer.length; i+=2) {
 			result[i/2] = Math.sqrt(buffer[i] * buffer[i] + buffer[i+1] * buffer[i + 1]);
 		}
-		return result; // this.dc_block_filter(
+		return result; 
 	}
 
 }

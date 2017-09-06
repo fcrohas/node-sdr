@@ -15,6 +15,7 @@ class IQProcessor {
 		this.sampleRate = 2048000;
 		this.audiorate = 24000
 		this.bandwidth = 150000;
+		this.intermediate = 256000;
 		this.fftr = new KissFFT.FFT(size);
 		this.order = 17;
 		this.fftwindow = new Window(size);
@@ -30,15 +31,15 @@ class IQProcessor {
 	updateAudiorate(audiorate) {
 		this.audiorate = audiorate;
 		this.audiofilter = new FIR(this.audiorate);
-		this.audiowindow = new Window(21);
+		this.audiowindow = new Window(57);
 		this.audiowindow.build(Window.blackman);
 		this.audiofilter.setWindow(this.audiowindow.get());
-		this.audiofilter.buildLowpass( this.audiorate / 2, 21);
+		this.audiofilter.buildLowpass( this.audiorate / 2, 57);
 		console.log('IQ demodulator audio rate change to ' + this.audiorate);
 	}
 
 	computeDecimation() {
-		this.decimationFactor = 1 << 31 - Math.clz32(this.sampleRate / this.bandwidth);
+		this.decimationFactor = 1 << 31 - Math.clz32(this.sampleRate / this.intermediate ); // this.bandwidth
 		console.log('compute decimation factor='+this.decimationFactor);
 	}
 
@@ -90,23 +91,28 @@ class IQProcessor {
 		this.updateDemodulate = true;
 		switch(modulation) {
 			case 'WFM' : 
-				this.demodulator = new FMDemod(0); 
+				this.demodulator = new FMDemod(1); 
+				this.intermediate = 256000;
 				this.updateAudiorate(24000); // 24 khz for WFM
 				break;
 			case 'FM' : 
 				this.demodulator = new FMDemod(2); 
+				this.intermediate = 256000;
 				this.updateAudiorate(24000); // 24 khz for FM
 				break;
 			case 'AM' : 
 				this.demodulator = new AMDemod(0);
+				this.intermediate = 128000;
 				this.updateAudiorate(16000); // 16 khz for AM
 				break;
 			case 'USB' : 
 				this.demodulator = new SSBDemod('USB'); 
+				this.intermediate = 128000;
 				this.updateAudiorate(8000); // 8 khz for SSB
 				break;
 			case 'LSB' : 
 				this.demodulator = new SSBDemod('LSB'); 
+				this.intermediate = 32000;
 				this.updateAudiorate(8000); // 8 khz for SSB
 				break;
 		}
@@ -118,8 +124,8 @@ class IQProcessor {
 		this.bandwidth = bandwidth;
 		this.computeDecimation();
 		this.window = new Window(this.order);
-		this.window.build(Window.hann);
-		this.lpfir = new FIR(this.sampleRate / this.decimationFactor, this.size + this.order);
+		this.window.build(Window.hamming);
+		this.lpfir = new FIR(this.sampleRate / this.decimationFactor);
 		this.lpfir.setWindow(this.window.get());
 		this.lpfir.buildLowpass( this.bandwidth, this.order);
 		console.log('Bandwidth change to : ' + this.bandwidth);

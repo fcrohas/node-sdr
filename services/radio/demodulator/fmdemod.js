@@ -8,7 +8,7 @@ class FMDemod extends Demodulator {
 		this.pre_j = 0;
 		this.avg = 0;
 		this.discriminant = null;
-		this.deemph_a = 1.0/((1.0-Math.exp(-1.0/(256000 * 75e-6))));
+		this.deemph_a = 1.0/((1.0-Math.exp(-1.0/(256000 * 50e-6))));
 		switch(mode) {
 			case 0 : this.discriminant = this.polar_disc_fast; break;
 			case 1 : this.discriminant = this.polar_discriminant; break;
@@ -103,7 +103,7 @@ class FMDemod extends Demodulator {
 
 		this.pre_r = pr;
 		this.pre_j = pj;
-		return result;
+		return this.dc_block_filter(this.deemph_filter(result)); // this.deemph_filter(
 	}
 }
 

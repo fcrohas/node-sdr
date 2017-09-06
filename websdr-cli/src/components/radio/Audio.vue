@@ -182,7 +182,7 @@ export default {
       this.context = new window.AudioContext()
       // create a gain node
       this.gainNode = this.context.createGain()
-      this.gainNode.gain.value = 25
+      this.gainNode.gain.value = 1
       // create analyzer visualization
       this.analyzer = this.context.createAnalyser()
       this.analyzer.fftSize = 128

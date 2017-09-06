@@ -113,7 +113,7 @@ export default {
       // Compute frequency diff
       const diff = this.tunedFrequency - this.centerFrequency
       // convert to pixel
-      const tunedFrequencyPosition = diff / binSize + this.bins / 2
+      const tunedFrequencyPosition = (diff / binSize + this.bins / 2) + 20
       ctx.beginPath()
       // Draw frequency selection
       ctx.lineWidth = '10'
@@ -221,7 +221,7 @@ export default {
       }, false)
       canvasElement.addEventListener('click', (evt) => {
         // compute frequency from click
-        const bin = this.getMousePos(canvasElement, evt).x
+        const bin = this.getMousePos(canvasElement, evt).x - 20
         var baseFrequency = (this.centerFrequency - (this.sampleRate / 2))
         const frequency = baseFrequency + bin * this.sampleRate / this.bins
         this.changeFrequency(frequency)

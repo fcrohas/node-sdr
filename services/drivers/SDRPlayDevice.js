@@ -59,19 +59,22 @@ class SDRPlayDevice extends Device {
 	start() {
 		this.driver.RSPII_AntennaControl(1);
 		this.driver.AmPortSelect(0);
+		this.driver.RSPII_RfNotchEnable(0);
 		this.driver.RSPII_BiasTControl(1);
 		if (this.sampleRate < 2000000) {
-			this.driver.DecimateControl(1, 4, 0);
-			this.sampleRate = this.sampleRate * 4;
+			this.driver.DecimateControl(1, 8, 0);
+			this.sampleRate = this.sampleRate * 8;
+		} else {
+			//this.driver.DecimateControl(1, 2, 0);
 		}
-		this.driver.StreamInit(58, this.sampleRate / 1000000, this.centerFrequency / 1000000,1536,0,3,28,0,128, (iqbuffer,bufferSize,firstSampleNum,grChanged,rfChanged,fsChanged,numSamples, reset) => {
+		this.driver.StreamInit(48, this.sampleRate / 1000000, this.centerFrequency / 1000000, 1536, 0, 3, 28, 0, 128, (iqbuffer,bufferSize,firstSampleNum,grChanged,rfChanged,fsChanged,numSamples, reset) => {
 			this.started = true;
 			if (this.streamCallback != null) {
 				this.streamCallback(new Int16Array(iqbuffer.buffer));
 			}
 		}, function(gRdB, lnagRdB) {
 			console.log("gRdb="+gRdB+" lnagRdB="+lnagRdB);
-		}, 32*16384, 16);
+		}, 64*16384, 16);
 	}
 
 	stop() {

@@ -1,7 +1,7 @@
 import websocket from './websocket'
 import opus from 'libopus.js'
 
-let ringbuffer = new Float32Array(24000 * 20)
+let ringbuffer = new Float32Array(24000 * 5)
 let ringwriteoffset = 0
 let ringreadoffset = 0
 let ringavailable = 0
@@ -74,7 +74,7 @@ addEventListener('message', (event) => {
         break;
       case 'onAudioFrame':
         // Prepare Opus decompress
-        ringbuffer = new Float32Array(data.params.sampleRate * 10)
+        ringbuffer = new Float32Array(data.params.sampleRate * 5)
         ringwriteoffset = 0
         ringreadoffset = 0
         ringavailable = 0
@@ -92,8 +92,9 @@ addEventListener('message', (event) => {
             // fill end with remaining data
             ringbuffer.set(pcm.subarray(0, ringbuffer.length - ringwriteoffset), ringwriteoffset)
             // then fill remaining to buffer start
-            ringwriteoffset = pcm.length - (ringbuffer.length - ringwriteoffset)
-            ringbuffer.set(pcm.subarray(ringwriteoffset, pcm.length - ringwriteoffset), 0)
+            const remaining = pcm.length - (ringbuffer.length - ringwriteoffset)
+            ringbuffer.set(pcm.subarray(ringbuffer.length - ringwriteoffset), 0)
+            ringwriteoffset = remaining
           } else {
             // add to ring buffer end
             ringbuffer.set(pcm, ringwriteoffset)

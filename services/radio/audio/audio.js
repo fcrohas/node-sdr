@@ -49,6 +49,7 @@ class Audio {
 			//subarray is safe here as it is only in this submethod
 			if (this.buffer.length - this.bufferOffset > 0) {
 				this.buffer.set(pcm.subarray(0, this.buffer.length - this.bufferOffset), this.bufferOffset);
+				this.bufferOffset += pcm.length
 			}
 			// Compress 1s frame per frame size then send
 			for (let i = 0; i < this.buffer.length; i += this.frame_size) {
@@ -59,13 +60,12 @@ class Audio {
 			}
 			// this.save('./data/test.wav');
 			// save remaining data
-			if (this.buffer.length - this.bufferOffset > 0) {
-				this.buffer.set(pcm.subarray(pcm.length - (this.buffer.length - this.bufferOffset)), 0);
-				this.bufferOffset = pcm.length - (this.buffer.length - this.bufferOffset);
+			if (this.bufferOffset > this.buffer.length) {
+				const remaining = this.bufferOffset - this.buffer.length;
+				this.buffer.set(pcm.subarray(pcm.length - remaining), 0);
+				this.bufferOffset = remaining;
 			} else {
-				// reset buffer to 0
-				this.bufferOffset = pcm.length;
-				this.buffer.set(pcm);
+				this.bufferOffset = 0;
 			}
 		}
 	}

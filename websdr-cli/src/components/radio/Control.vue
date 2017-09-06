@@ -5,6 +5,8 @@
         <v-layout row wrap class="display full-size">
           <v-flex xs12 class="full-size">
             <span class="frequency">{{tunedFrequency}}<span class="tunerFrequency">Tuner frequency : {{centerFrequency}}</span></span>
+            <v-btn flat value="am" @click="changeCenterFrequency(-500000)">-</v-btn>
+            <v-btn flat value="am" @click="changeCenterFrequency(500000)">+</v-btn>
           </v-flex>
           <v-flex xs12 class="full-size">
             <v-btn flat value="am" @click="changeModulation('AM')">AM</v-btn>
