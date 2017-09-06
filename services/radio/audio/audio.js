@@ -12,7 +12,7 @@ class Audio {
 		// 10 ms frame_size
 		this.frame_size = this.audiorate / 100; 
 		// 5s buffer ? 
-		this.buffer = new Float32Array(this.audiorate);
+		this.buffer = new Float32Array(this.audiorate * 2);
 		this.bufferOffset = 0;
 		// Callabck events
 		this.callback = [];
@@ -32,7 +32,7 @@ class Audio {
 		// 10 ms frame_size
 		this.frame_size = value / 100; 
 		// 5s buffer ? 
-		this.buffer = new Float32Array(value);
+		this.buffer = new Float32Array(value * 2);
 		this.bufferOffset = 0;
 		this.update = false;
 	}
@@ -52,18 +52,19 @@ class Audio {
 				this.bufferOffset += pcm.length;
 			}
 			// Compress 1s frame per frame size then send
-			console.time('audioComplete');
+			//console.time('audioComplete');
 			for (let i = 0; i < this.buffer.length; i += this.frame_size) {
 				const compressed = this.encoder.encode(this.buffer.subarray(i, i + this.frame_size));
 				if (this.callback['complete'] != null) {
 					this.callback['complete'](compressed);
 				}
 			}
-			console.timeEnd('audioComplete');			
+			//console.timeEnd('audioComplete');			
 			// this.save('./data/test.wav');
 			// save remaining data
 			if (this.bufferOffset > this.buffer.length) {
 				const remaining = this.bufferOffset - this.buffer.length;
+				console.log('remaining=', remaining, ' offset=', this.bufferOffset, ' pcm length=', pcm.length, 'buffer length=', this.buffer.length);
 				this.buffer.set(pcm.subarray(pcm.length - remaining), 0);
 				this.bufferOffset = remaining;
 			} else {

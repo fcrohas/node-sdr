@@ -22,6 +22,7 @@
     "socket.io": "^2.0.3",
     "thread-sleep": "^2.0.0",
     "threads": "^0.8.1",
-    "webworker-threads": "^0.7.13"
+    "webworker-threads": "^0.7.13",
+    "sdrplay-bindings": "git://github.com/fcrohas/sdrplay-jsbinding.git#master"
   }
 }

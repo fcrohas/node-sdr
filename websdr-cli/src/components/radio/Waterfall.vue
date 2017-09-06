@@ -29,7 +29,8 @@ export default {
     centerFrequency: 'centerFrequency',
     isConnected: 'isConnected',
     sampleRate: 'sampleRate',
-    modulationType: 'modulationType'
+    modulationType: 'modulationType',
+    stepFrequency: 'stepFrequency'
   }),
   data () {
     return {
@@ -223,7 +224,9 @@ export default {
         // compute frequency from click
         const bin = this.getMousePos(canvasElement, evt).x - 20
         var baseFrequency = (this.centerFrequency - (this.sampleRate / 2))
-        const frequency = baseFrequency + bin * this.sampleRate / this.bins
+        let frequency = baseFrequency + bin * this.sampleRate / this.bins
+        // Snap to grid ?
+        frequency = Math.round(frequency / this.stepFrequency) * this.stepFrequency
         this.changeFrequency(frequency)
       })
     },

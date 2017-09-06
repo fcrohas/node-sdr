@@ -5,13 +5,14 @@ const state = {
   frequency: 106100000,
   bandwidth: 170000,
   centerFrequency: 106000000,
-  sampleRate: 2048000,
+  sampleRate: 2100000,
+  stepFrequency: 100000,
   audiorate: 24000,
   connected: false,
   opened: false,
   tunerGain: 241,
   capabilities: [],
-  modulation: 'WFM'
+  modulation: 'FM'
 }
 
 const getters = {
@@ -23,7 +24,8 @@ const getters = {
   capabilities: state => state.capabilities,
   modulationType: state => state.modulation,
   sampleRate: state => state.sampleRate,
-  audiorate: state => state.audiorate
+  audiorate: state => state.audiorate,
+  stepFrequency: state => state.stepFrequency
 }
 
 const actions = {
@@ -90,13 +92,13 @@ const actions = {
           commit(types.AUDIORATE_CHANGE, 24000)
           break
         case 'AM' :
-          commit(types.AUDIORATE_CHANGE, 16000)
+          commit(types.AUDIORATE_CHANGE, 24000)
           break
         case 'LSB' :
-          commit(types.AUDIORATE_CHANGE, 8000)
+          commit(types.AUDIORATE_CHANGE, 24000)
           break
         case 'USB' :
-          commit(types.AUDIORATE_CHANGE, 8000)
+          commit(types.AUDIORATE_CHANGE, 24000)
           break
       }
       // validate modulation change
@@ -123,6 +125,9 @@ const actions = {
   },
   changeAudiorate ({ commit }, audiorate) {
     commit(types.AUDIORATE_CHANGE, audiorate)
+  },
+  changeFrequencyStep ({ commit }, step) {
+    commit(types.STEPFREQUENCY_CHANGE, step)
   }
 }
 
@@ -149,6 +154,9 @@ const mutations = {
     state.sampleRate = sampleRate
   },
   [types.AUDIORATE_CHANGE] (state, audiorate) {
+    state.audiorate = audiorate
+  },
+  [types.STEPFREQUENCY_CHANGE] (state, audiorate) {
     state.audiorate = audiorate
   }
 }
