@@ -2,7 +2,7 @@
   <v-container fluid class="full-size">
     <v-layout class="full-size">
       <v-flex xs12 align-end flexbox class="full-size">
-        <div class="full-size">
+        <div ref="parent" class="full-size">
           <canvas ref="audioSpectrum" class="audioSpectrum"></canvas>
           <v-progress-circular
               v-bind:size="70"
@@ -144,8 +144,6 @@ export default {
         return
       }
       // const canvasCtx = this.$refs.audioSpectrum.getContext('2d')
-      this.$refs.audioSpectrum.width = this.width
-      this.$refs.audioSpectrum.height = this.height
       // this.draw(canvasCtx)
       // wait for websocket pcm data
       Websocket.onAudioFrame(this.sourceSampleRate, 1, (pcm) => {
@@ -171,23 +169,29 @@ export default {
   },
   mounted: function () {
     if (this.$route.params != null) {
-      this.serialNumber = this.$route.params.serialNumber
-      // Setup canvas audio analyzer
-      const canvasCtx = this.$refs.audioSpectrum.getContext('2d')
-      this.$refs.audioSpectrum.width = this.width
-      this.$refs.audioSpectrum.height = this.height
-      // Prepare webaudio API
-      window.AudioContext = window.AudioContext || window.webkitAudioContext
-      // Audio context
-      this.context = new window.AudioContext()
-      // create a gain node
-      this.gainNode = this.context.createGain()
-      this.gainNode.gain.value = 1
-      // create analyzer visualization
-      this.analyzer = this.context.createAnalyser()
-      this.analyzer.fftSize = 128
-      this.fftArray = new Uint8Array(this.analyzer.frequencyBinCount)
-      this.draw(canvasCtx)
+      this.$nextTick(() => {
+        this.serialNumber = this.$route.params.serialNumber
+        // Setup canvas audio analyzer
+        const canvasCtx = this.$refs.audioSpectrum.getContext('2d')
+        this.width = this.$refs.parent.clientWidth
+        this.height = this.$refs.parent.clientHeight
+        this.$refs.audioSpectrum.width = this.width
+        this.$refs.audioSpectrum.height = this.height
+        this.$refs.audioSpectrum.style.width = this.$refs.parent.clientWidth + 'px'
+        this.$refs.audioSpectrum.style.height = this.$refs.parent.clientHeight + 'px'
+        // Prepare webaudio API
+        window.AudioContext = window.AudioContext || window.webkitAudioContext
+        // Audio context
+        this.context = new window.AudioContext()
+        // create a gain node
+        this.gainNode = this.context.createGain()
+        this.gainNode.gain.value = 1
+        // create analyzer visualization
+        this.analyzer = this.context.createAnalyser()
+        this.analyzer.fftSize = 128
+        this.fftArray = new Uint8Array(this.analyzer.frequencyBinCount)
+        this.draw(canvasCtx)
+      })
     }
   },
   destroyed: function () {
@@ -201,19 +205,19 @@ export default {
 .full-size {
   width: 100%;
   height: 100%;
-  padding: 0px;
+/*  padding: 0px;*/
 }
 .audioSpectrum {
   position: absolute;
   border:1px solid #BBB;
-  width: 100%;
+/*  width: 100%;
   height: 100%;
-  z-index: 0;
+*/  z-index: 0;
 }
 .buffer {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 110px;
+  right: 60px;
   z-index: 1;
 }
 </style>

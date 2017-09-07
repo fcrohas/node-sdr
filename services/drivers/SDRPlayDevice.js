@@ -66,7 +66,7 @@ class SDRPlayDevice extends Device {
 
 	start() {
 		this.driver.RSPII_AntennaControl(this.driver.mir_sdr_RSPII_ANTENNA_B);
-		this.driver.AmPortSelect(0);
+		this.driver.AmPortSelect(1);
 		this.driver.RSPII_RfNotchEnable(0);
 		this.driver.RSPII_BiasTControl(1);
 		if (this.sampleRate < 2000000) {

@@ -19,7 +19,7 @@ class IQProcessor {
 		this.fftr = new KissFFT.FFT(size);
 		this.order = 25;
 		this.fftwindow = new Window(size);
-		this.fftwindow.build(Window.hann);
+		this.fftwindow.build(Window.hamming);
 		this.decimationFactor = 1;
 		this.xlatvectArr = null;
 		this.xlatArr = null;		
@@ -231,13 +231,17 @@ class IQProcessor {
 		if (this.updateFFT) {
 			return null;
 		}
-		let average = 4;
+		let average = 32;
 		var fftOut = new Uint8Array(floatarr.length / 2);		
 		var fftmean = new Uint8Array(fftOut.length / average);		
 		let result = new Uint8Array(this.size);
 		for (var k = 0; k < floatarr.length; k += this.size * 2) {
 			// fft size is 512 so double buffer
+			// Apply window
 			var truncData = floatarr.subarray(k, k + this.size * 2);
+			for (let c = 0; c < this.size; c++) {
+				truncData[c] = this.fftwindow.get()[c] * truncData[c];
+			}
 			var transform = this.fftr.forward(truncData);
 			// compute magnitude with db log
 			let j = 0;
@@ -248,9 +252,9 @@ class IQProcessor {
 				//const log = 20 * Math.log10(magnitude);
 				// switch result here
 				if (i < transformSize) {
-					result[j + halfFft] = magnitude * 4;
+					result[j + halfFft] = magnitude * 128;
 				} else {
-					result[j - halfFft] = magnitude * 4;
+					result[j - halfFft] = magnitude * 128;
 				}
 				j++;
 			}

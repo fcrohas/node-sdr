@@ -1,6 +1,19 @@
 <template>
-  <v-container fluid grid-list-md>
-   <vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="1600" :h="400" :x="100" :y="500">
+  <v-container fluid grid-list-md class="full-size">
+    <v-layout row wrap class="full-size">
+        <v-flex xs12 md2 class="full-size">
+            <control class="full-size"></control>
+        </v-flex>
+        <v-flex xs12 md8 class="full-size">
+            <waterfall class="full-size"></waterfall>
+        </v-flex>
+        <v-flex xs12 md2 class="full-size">
+            <audio-stream class="full-size"></audio-stream>
+        </v-flex>
+    </v-layout>
+
+
+<!--    <vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="1600" :h="400" :x="100" :y="500">
         <waterfall></waterfall>
     </vue-draggable-resizable>
     <vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="800" :h="200" :x="100" :y="100">
@@ -9,7 +22,7 @@
     <vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="400" :h="200" :x="800" :y="200">
         <audio-stream></audio-stream>
     </vue-draggable-resizable>
-   </v-container>
+ -->   </v-container>
   
 </template>
 

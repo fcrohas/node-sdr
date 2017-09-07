@@ -1,14 +1,14 @@
 <template>
-    <v-container fluid class="full-size">
-      <v-layout column class="full-size">
-        <v-flex xs12 class="full-size">
-          <div class="full-size">
-            <canvas ref="spectrum" class="spectrum"></canvas>
-            <canvas ref="overlay" class="freq-overlay"></canvas>
-          </div>
-        </v-flex>
-      </v-layout>
-    </v-container>
+  <v-container fluid class="full-size">
+    <v-layout class="full-size">
+      <v-flex xs12 align-end flexbox class="full-size">
+        <div ref="parent" class="full-size">
+          <canvas ref="spectrum" class="spectrum"></canvas>
+          <canvas ref="overlay" class="freq-overlay"></canvas>
+        </div>
+      </v-flex>
+    </v-layout>
+  </v-container>
 </template>
 
 <script>
@@ -36,8 +36,8 @@ export default {
     return {
       serialNumber: '',
       bins: 4096,
-      width: 4096,
-      height: 600,
+      width: 4136,
+      height: 800,
       fftdata: {scale: 1 / 10000},
       overlayPos: {x: 0, y: 0},
       overlayCanvas: null,
@@ -46,7 +46,10 @@ export default {
       bufferRGBA: null,
       imageFFT: null,
       spectrumCtx: null,
-      level: 56
+      overlayCtx: null,
+      level: 56,
+      scaleX: 0.26,
+      scaleY: 0.26
     }
   },
   methods: {
@@ -189,8 +192,8 @@ export default {
     getMousePos: function (canvas, evt) {
       var rect = canvas.getBoundingClientRect()
       return {
-        x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
-        y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
+        x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width * 1 / this.scaleX,
+        y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height * 1 / this.scaleY
       }
     },
     bandwidthChange: function (evt) {
@@ -198,24 +201,23 @@ export default {
       var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)))
       this.changeBandwidth(this.currentBandwidth + delta * 5000)
     },
-    drawOverlay: function (canvasElement, overlay) {
-      // Get canvas context
-      var ctx = canvasElement.getContext('2d')
-      canvasElement.width = this.width + 40
-      canvasElement.height = this.height + 40
+    drawOverlay: function (ctx, overlay) {
+      const canvasElement = this.$refs.overlay
+      const canvasWidth = canvasElement.width * 1 / this.scaleX
+      const canvasHeight = canvasElement.height * 1 / this.scaleY
       canvasElement.addEventListener('mousemove', (evt) => {
-        ctx.clearRect(0, 0, canvasElement.width, canvasElement.height)
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight)
         this.overlay = this.getMousePos(canvasElement, evt)
         this.drawFrequency(ctx, this.overlay)
       }, false)
       canvasElement.addEventListener('mousewheel', (evt) => {
-        ctx.clearRect(0, 0, canvasElement.width, canvasElement.height)
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight)
         this.overlay = this.getMousePos(canvasElement, evt)
         this.bandwidthChange(evt)
         this.drawFrequency(ctx, this.overlay)
       }, false)
       canvasElement.addEventListener('DOMMouseScroll', (evt) => {
-        ctx.clearRect(0, 0, canvasElement.width, canvasElement.height)
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight)
         this.overlay = this.getMousePos(canvasElement, evt)
         this.bandwidthChange(evt)
         this.drawFrequency(ctx, this.overlay)
@@ -230,13 +232,9 @@ export default {
         this.changeFrequency(frequency)
       })
     },
-    drawWaterfall: function (canvasElement, fft) {
+    drawWaterfall: function (ctx, fft) {
       // Get canvas context
-      var ctx = canvasElement.getContext('2d')
-      this.spectrumCtx = ctx
       // setup canvas
-      canvasElement.width = this.width + 40
-      canvasElement.height = this.height + 40
       // Initialize image
       if (this.imageFFT == null) {
         this.imageFFT = ctx.createImageData(this.width, this.height - 100)
@@ -272,6 +270,7 @@ export default {
         ctx.fillText(frequency + unit, i + 18 - 25, this.height - 10)
       }
       ctx.stroke()
+      // ctx.scale(this.scaleX, this.scaleY)
     },
     reDraw: function () {
       // Scroll image down
@@ -285,13 +284,13 @@ export default {
   },
   watch: {
     modulationType (value) {
-      this.drawTunedFrequency(this.$refs.overlay.getContext('2d'))
+      this.drawTunedFrequency(this.overlayCtx)
     },
     centerFrequency () {
-      this.drawWaterfall(this.$refs.spectrum, this.fftdata)
+      this.drawWaterfall(this.spectrumCtx, this.fftdata)
     },
     tunedFrequency (value) {
-      this.drawTunedFrequency(this.$refs.overlay.getContext('2d'))
+      this.drawTunedFrequency(this.overlayCtx)
     },
     isConnected (value) {
       if (!value) {
@@ -317,14 +316,33 @@ export default {
   },
   mounted: function () {
     if (this.$route.params != null) {
-      // Prepare websocket connection
-      this.serialNumber = this.$route.params.serialNumber
-      // Initial buffer
-      this.bufferRGBA = new Uint8Array(this.width * 4)
-      // Draw once connected
-      this.drawOverlay(this.$refs.overlay, this.overlayPos)
-      this.drawWaterfall(this.$refs.spectrum, this.fftdata)
+      this.$nextTick(() => {
+        // this.width = this.$refs.parent.clientWidth - 40
+        // this.height = this.$refs.parent.clientHeight - 40
+        this.$refs.overlay.style.width = this.$refs.parent.clientWidth + 'px'
+        this.$refs.overlay.style.height = this.$refs.parent.clientHeight + 'px'
+        this.$refs.spectrum.style.width = this.$refs.parent.clientWidth + 'px'
+        this.$refs.spectrum.style.height = this.$refs.parent.clientHeight + 'px'
+        this.$refs.overlay.width = this.width // this.$refs.parent.clientWidth - 40
+        this.$refs.overlay.height = this.height // this.$refs.parent.clientHeight - 40
+        this.$refs.spectrum.width = this.width // this.$refs.parent.clientWidth - 40
+        this.$refs.spectrum.height = this.height // this.$refs.parent.clientHeight - 40
+        // scale
+        this.scaleX = 1.0 // (this.$refs.parent.clientWidth - 40) / this.width
+        this.scaleY = 1.0 // (this.$refs.parent.clientHeight - 40) / this.height
+        // Prepare websocket connection
+        this.serialNumber = this.$route.params.serialNumber
+        // Initial buffer
+        this.bufferRGBA = new Uint8Array(this.width * 4)
+        // Draw once connected
+        this.spectrumCtx = this.$refs.spectrum.getContext('2d')
+        this.overlayCtx = this.$refs.overlay.getContext('2d')
+        this.drawOverlay(this.overlayCtx, this.overlayPos)
+        this.drawWaterfall(this.spectrumCtx, this.fftdata)
+      })
     }
+  },
+  updated: function () {
   },
   destroyed: function () {
     if (!this.disconnected) {
@@ -347,15 +365,15 @@ export default {
 .full-size-90 {
   width: 100%;
   height: calc(100%-90px);
-  padding: 0px;
+  /*padding: 0px;*/
 }
 .full-size {
   width: 100%;
   height: 100%;
-  padding: 0px;
+/*  padding: 0px;*/
 }
 .spacing {
-  padding : 15px;
+/*  padding : 15px;*/
 }
 .fake {
   width: 100%;
@@ -364,15 +382,15 @@ export default {
 .spectrum {
   position: absolute;
   border:1px solid #BBB;
-  width: 100%;
+/*  width: 100%;
   height: 100%;
-  background: black;
+*/  background: black;
   z-index: 0;
 }
 .freq-overlay {
   position: absolute;
-  width: 100%;
+/*  width: 100%;
   height: 100%;
-  z-index: 1;
+*/  z-index: 1;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <v-app toolbar footer fill-height>
+  <v-app toolbar footer class="full-height">
     <main-menu :display="displayMenu"></main-menu>
     <v-toolbar class="indigo" dark>
       <v-toolbar-title>
@@ -8,9 +8,9 @@
       <v-spacer></v-spacer>
       <v-text-field label="Search..." single-line append-icon="search" dark hide-details></v-text-field>
     </v-toolbar>
-    <main>
-      <v-container fluid>
-        <router-view></router-view>
+    <main class="height-90">
+      <v-container fluid class="full-height">
+        <router-view class="full-height"></router-view>
       </v-container>
     </main>
     <v-footer class="indigo">
@@ -40,8 +40,11 @@ export default {
 </script>
 
 <style lang="css" scoped>
-.full-size {
-  width: 100%;
+.full-height {
   height: 100%;
+}
+
+.height-90 {
+  height: 90%;
 }
 </style>
