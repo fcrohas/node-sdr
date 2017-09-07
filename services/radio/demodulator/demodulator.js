@@ -13,7 +13,7 @@ class Demodulator {
 			sum += pcm[i];
 		}
 		avg = sum / pcm.length;
-		avg = (avg + this.dc_avg * 2) / 4;
+		avg = (avg + this.dc_avg * 9) / 10;
 		for (let i=0; i < pcm.length; i++) {
 			pcm[i] -= avg;
 		}

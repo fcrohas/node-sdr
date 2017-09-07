@@ -1,9 +1,9 @@
 <template>
   <v-container fluid grid-list-md>
-   <vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="800" :h="400" :x="500" :y="500">
+   <vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="1600" :h="400" :x="100" :y="500">
         <waterfall></waterfall>
     </vue-draggable-resizable>
-    <vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="400" :h="300" :x="100" :y="100">
+    <vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="800" :h="200" :x="100" :y="100">
         <control></control>
     </vue-draggable-resizable>
     <vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="400" :h="200" :x="800" :y="200">

@@ -6,6 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "JASON": "git://github.com/xk/JASON#master",
     "body-parser": "~1.17.1",
     "config-node": "^1.3.0",
     "console-stamp": "^0.2.5",
@@ -16,13 +17,12 @@
     "kissfft-js": "^0.1.4",
     "libopus.js": "0.0.1",
     "morgan": "~1.8.1",
+    "node-serialize": "0.0.4",
     "node-wav": "0.0.2",
     "sdrjs": "0.0.6",
+    "sdrplay-bindings": "git://github.com/fcrohas/sdrplay-jsbinding.git#master",
     "serve-favicon": "~2.4.2",
     "socket.io": "^2.0.3",
-    "thread-sleep": "^2.0.0",
-    "threads": "^0.8.1",
-    "webworker-threads": "^0.7.13",
-    "sdrplay-bindings": "git://github.com/fcrohas/sdrplay-jsbinding.git#master"
+    "thread-sleep": "^2.0.0"
   }
 }

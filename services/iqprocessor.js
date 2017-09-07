@@ -231,9 +231,10 @@ class IQProcessor {
 		if (this.updateFFT) {
 			return null;
 		}
-		var fftOut = new Uint8Array(this.size);		
+		let average = 4;
+		var fftOut = new Uint8Array(floatarr.length / 2);		
+		var fftmean = new Uint8Array(fftOut.length / average);		
 		let result = new Uint8Array(this.size);
-		let prevresult = new Uint8Array(this.size);
 		for (var k = 0; k < floatarr.length; k += this.size * 2) {
 			// fft size is 512 so double buffer
 			var truncData = floatarr.subarray(k, k + this.size * 2);
@@ -247,25 +248,29 @@ class IQProcessor {
 				//const log = 20 * Math.log10(magnitude);
 				// switch result here
 				if (i < transformSize) {
-					result[j + halfFft] = magnitude * 255;
+					result[j + halfFft] = magnitude * 4;
 				} else {
-					result[j - halfFft] = magnitude * 255;
+					result[j - halfFft] = magnitude * 4;
 				}
 				j++;
 			}
 			// Average result
-			if (k == 0) {
-				// store fft for this chunk
-				prevresult.set(result);
-			} else {
-				// average results
-				for (let a = 0; a < fftOut.length; a++) {
-					fftOut[a] = (prevresult[a] + result[a]) / 2;
-					prevresult.set(fftOut);
+			fftOut.set(result, k / 2);
+		}
+		// Average last n result
+		for (let a = 0; a < fftOut.length; a+=this.size * average) {
+			// Average them
+			for (let b = 0; b < this.size * average; b+=this.size) {
+				if (b == 0) {
+					fftmean.set(fftOut.subarray(a, this.size), a / average);
+				} else {
+					for (let c = 0; c < this.size; c++) {
+						fftmean[a  / average + c] = (fftOut[a + b + c] + fftmean[a  / average + c]) / 2;
+					}
 				}
 			}
 		}
-		return fftOut;
+		return fftmean;
 	}
 }
 

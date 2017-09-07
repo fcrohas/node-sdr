@@ -4,15 +4,15 @@ import Websocket from '../../service/websocket-cli'
 const state = {
   frequency: 106100000,
   bandwidth: 170000,
-  centerFrequency: 106000000,
-  sampleRate: 2100000,
+  centerFrequency: 106100000,
+  sampleRate: 900001,
   stepFrequency: 100000,
   audiorate: 24000,
   connected: false,
   opened: false,
   tunerGain: 241,
   capabilities: [],
-  modulation: 'FM'
+  modulation: 'WFM'
 }
 
 const getters = {

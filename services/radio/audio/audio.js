@@ -64,7 +64,6 @@ class Audio {
 			// save remaining data
 			if (this.bufferOffset > this.buffer.length) {
 				const remaining = this.bufferOffset - this.buffer.length;
-				console.log('remaining=', remaining, ' offset=', this.bufferOffset, ' pcm length=', pcm.length, 'buffer length=', this.buffer.length);
 				this.buffer.set(pcm.subarray(pcm.length - remaining), 0);
 				this.bufferOffset = remaining;
 			} else {
