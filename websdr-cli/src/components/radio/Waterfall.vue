@@ -1,15 +1,15 @@
 <template>
-  <v-container fluid class="full-size">
-    <v-layout class="full-size">
-      <v-flex xs12 align-end flexbox class="full-size">
         <div ref="parent" class="full-size">
           <canvas ref="spectrum" class="spectrum"></canvas>
           <canvas ref="overlay" class="freq-overlay"></canvas>
         </div>
+<!--   <v-container fluid class="full-size">
+    <v-layout class="full-size">
+      <v-flex xs12 align-end flexbox class="full-size">
       </v-flex>
     </v-layout>
   </v-container>
-</template>
+ --></template>
 
 <script>
 import { mapGetters, mapActions } from 'vuex'
@@ -36,8 +36,11 @@ export default {
     return {
       serialNumber: '',
       bins: 4096,
-      width: 4136,
-      height: 800,
+      width: 4116,
+      height: 1000,
+      waterfallHeight: 471,
+      waterfallYOffset: 500,
+      fftHeight: 440,
       fftdata: {scale: 1 / 10000},
       overlayPos: {x: 0, y: 0},
       overlayCanvas: null,
@@ -49,7 +52,12 @@ export default {
       overlayCtx: null,
       level: 56,
       scaleX: 0.26,
-      scaleY: 0.26
+      scaleY: 0.26,
+      topMargin: 12,
+      bottomMargin: 12,
+      leftMargin: 8,
+      rightMargin: 8
+
     }
   },
   methods: {
@@ -117,43 +125,43 @@ export default {
       // Compute frequency diff
       const diff = this.tunedFrequency - this.centerFrequency
       // convert to pixel
-      const tunedFrequencyPosition = (diff / binSize + this.bins / 2) + 20
+      const tunedFrequencyPosition = (diff / binSize + this.bins / 2) + this.leftMargin
       ctx.beginPath()
       // Draw frequency selection
       ctx.lineWidth = '10'
       ctx.strokeStyle = 'red'
-      ctx.moveTo(tunedFrequencyPosition, 28)
-      ctx.lineTo(tunedFrequencyPosition, this.height - 88)
+      ctx.moveTo(tunedFrequencyPosition, this.topMargin)
+      ctx.lineTo(tunedFrequencyPosition, this.topMargin + this.fftHeight - this.bottomMargin)
       ctx.stroke()
       // draw lower bandwidth
       ctx.beginPath()
       ctx.lineWidth = '4'
       ctx.strokeStyle = 'white'
       if (this.modulationType !== 'USB') {
-        ctx.moveTo(tunedFrequencyPosition - bwPix / 2, 28)
-        ctx.lineTo(tunedFrequencyPosition - bwPix / 2, this.height - 88)
+        ctx.moveTo(tunedFrequencyPosition - bwPix / 2, this.topMargin)
+        ctx.lineTo(tunedFrequencyPosition - bwPix / 2, this.topMargin + this.fftHeight - this.bottomMargin)
       }
       // draw upper bandwidth
       if (this.modulationType !== 'LSB') {
-        ctx.moveTo(tunedFrequencyPosition + bwPix / 2, 28)
-        ctx.lineTo(tunedFrequencyPosition + bwPix / 2, this.height - 88)
+        ctx.moveTo(tunedFrequencyPosition + bwPix / 2, this.topMargin)
+        ctx.lineTo(tunedFrequencyPosition + bwPix / 2, this.topMargin + this.fftHeight - this.bottomMargin)
       }
       ctx.stroke()
       // slight overlay of area
       ctx.fillStyle = 'rgba(225,225,255,0.2)'
       if (this.modulationType === 'USB') {
-        ctx.fillRect(tunedFrequencyPosition, 28, bwPix / 2, this.height - 116)
+        ctx.fillRect(tunedFrequencyPosition, this.topMargin, bwPix / 2, this.topMargin + this.fftHeight - this.bottomMargin)
       } else if (this.modulationType === 'LSB') {
-        ctx.fillRect(tunedFrequencyPosition - bwPix / 2, 28, bwPix / 2, this.height - 116)
+        ctx.fillRect(tunedFrequencyPosition - bwPix / 2, this.topMargin, bwPix / 2, this.topMargin + this.fftHeight - this.bottomMargin)
       } else {
-        ctx.fillRect(tunedFrequencyPosition - bwPix / 2, 28, bwPix, this.height - 116)
+        ctx.fillRect(tunedFrequencyPosition - bwPix / 2, this.topMargin, bwPix, this.topMargin + this.fftHeight - this.bottomMargin)
       }
     },
     drawFrequency: function (ctx, overlay) {
       this.drawTunedFrequency(ctx)
       // limit bounding
-      if (overlay.x < 20) return
-      if (overlay.x > 20 + this.width) return
+      if (overlay.x < this.leftMargin) return
+      if (overlay.x > this.width - this.rightMargin) return
       // compute binSize
       const binSize = this.sampleRate / this.bins
       // bandwidth in pixel
@@ -162,31 +170,31 @@ export default {
       // Draw frequency selection
       ctx.lineWidth = '10'
       ctx.strokeStyle = 'red'
-      ctx.moveTo(overlay.x, 28)
-      ctx.lineTo(overlay.x, this.height - 88)
+      ctx.moveTo(overlay.x, this.topMargin)
+      ctx.lineTo(overlay.x, this.topMargin + this.fftHeight - this.bottomMargin)
       ctx.stroke()
       // draw lower bandwidth
       ctx.beginPath()
       ctx.lineWidth = '4'
       ctx.strokeStyle = 'white'
       if (this.modulationType !== 'USB') {
-        ctx.moveTo(overlay.x - bwPix / 2, 28)
-        ctx.lineTo(overlay.x - bwPix / 2, this.height - 88)
+        ctx.moveTo(overlay.x - bwPix / 2, this.topMargin)
+        ctx.lineTo(overlay.x - bwPix / 2, this.topMargin + this.fftHeight - this.bottomMargin)
       }
       // draw upper bandwidth
       if (this.modulationType !== 'LSB') {
-        ctx.moveTo(overlay.x + bwPix / 2, 28)
-        ctx.lineTo(overlay.x + bwPix / 2, this.height - 88)
+        ctx.moveTo(overlay.x + bwPix / 2, this.topMargin)
+        ctx.lineTo(overlay.x + bwPix / 2, this.topMargin + this.fftHeight - this.bottomMargin)
       }
       ctx.stroke()
       // slight overlay of area
       ctx.fillStyle = 'rgba(225,225,255,0.2)'
       if (this.modulationType === 'USB') {
-        ctx.fillRect(overlay.x, 28, bwPix / 2, this.height - 116)
+        ctx.fillRect(overlay.x, this.topMargin, bwPix / 2, this.topMargin + this.fftHeight - this.bottomMargin)
       } else if (this.modulationType === 'LSB') {
-        ctx.fillRect(overlay.x - bwPix / 2, 28, bwPix / 2, this.height - 116)
+        ctx.fillRect(overlay.x - bwPix / 2, this.topMargin, bwPix / 2, this.topMargin + this.fftHeight - this.bottomMargin)
       } else {
-        ctx.fillRect(overlay.x - bwPix / 2, 28, bwPix, this.height - 116)
+        ctx.fillRect(overlay.x - bwPix / 2, this.topMargin, bwPix, this.topMargin + this.fftHeight - this.bottomMargin)
       }
     },
     getMousePos: function (canvas, evt) {
@@ -224,7 +232,7 @@ export default {
       }, false)
       canvasElement.addEventListener('click', (evt) => {
         // compute frequency from click
-        const bin = this.getMousePos(canvasElement, evt).x - 20
+        const bin = this.getMousePos(canvasElement, evt).x - this.leftMargin
         var baseFrequency = (this.centerFrequency - (this.sampleRate / 2))
         let frequency = baseFrequency + bin * this.sampleRate / this.bins
         // Snap to grid ?
@@ -232,32 +240,75 @@ export default {
         this.changeFrequency(frequency)
       })
     },
+    drawFFT: function (ctx, data) {
+      // clear rectangle
+      const scale = (this.fftHeight - this.bottomMargin) / 255
+      ctx.clearRect(this.leftMargin + 1, this.topMargin + 1, this.bins, this.fftHeight)
+      // draw line
+      ctx.beginPath()
+      ctx.lineWidth = '2'
+      ctx.strokeStyle = 'lightgray'
+      var step = this.bins / 6
+      for (let i = step; i < this.bins - step; i += step) {
+        ctx.moveTo(i + this.leftMargin, this.topMargin)
+        ctx.lineTo(i + this.leftMargin, this.topMargin + this.fftHeight)
+      }
+      ctx.lineWidth = '0.5'
+      step = this.fftHeight / 5
+      for (let y = step; y < this.fftHeight; y += step) {
+        ctx.moveTo(this.leftMargin + 1, this.topMargin + y)
+        ctx.lineTo(this.leftMargin + this.bins, this.topMargin + y)
+      }
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.lineWidth = '2'
+      ctx.strokeStyle = 'white'
+      for (let i = 0; i < this.bins; i++) {
+        if (i === 0) {
+          ctx.moveTo(this.leftMargin + 1 + i, this.topMargin + this.fftHeight - data[i] * scale)
+        } else {
+          ctx.lineTo(this.leftMargin + 1 + i, this.topMargin + this.fftHeight - data[i] * scale)
+        }
+      }
+      // properly close path
+      ctx.lineTo(this.leftMargin + this.bins + 1, this.topMargin + this.fftHeight + 10)
+      ctx.lineTo(this.leftMargin + 1, this.topMargin + this.fftHeight + 10)
+      ctx.closePath()
+      ctx.fillStyle = 'rgba(30,30,30,0.8)'
+      ctx.fill()
+      ctx.strokeStyle = 'white'
+      ctx.stroke()
+    },
     drawWaterfall: function (ctx, fft) {
-      // Get canvas context
-      // setup canvas
       // Initialize image
       if (this.imageFFT == null) {
-        this.imageFFT = ctx.createImageData(this.width, this.height - 100)
+        this.imageFFT = ctx.createImageData(this.bins, this.waterfallHeight)
       }
       // font
-      ctx.font = 'bold 54px Arial'
+      ctx.font = 'bold 35px Courier New'
       // draw grid
       ctx.beginPath()
       // Draw component contour
-      ctx.lineWidth = '4'
-      ctx.strokeStyle = 'white'
-      ctx.rect(18, 18, this.width + 2, this.height + 2)
-
       ctx.lineWidth = '6'
-      ctx.moveTo(20, this.height - 78)
-      ctx.lineTo(20 + this.width, this.height - 78)
+      ctx.strokeStyle = 'white'
+      ctx.rect(this.leftMargin, this.topMargin, this.bins + 4, this.height - (this.bottomMargin + this.topMargin))
+
+      // Draw text with frequences
+      ctx.lineWidth = '4'
+      ctx.moveTo(this.leftMargin + 1, this.topMargin + this.fftHeight + 10)
+      ctx.lineTo(this.bins + 4, this.topMargin + this.fftHeight + 10)
+      // separator line with waterfall
+      ctx.lineWidth = '4'
+      ctx.moveTo(this.leftMargin + 1, this.waterfallYOffset + this.topMargin)
+      ctx.lineTo(this.bins + 4, this.waterfallYOffset + this.topMargin)
+
       var baseFrequency = (this.centerFrequency - (this.sampleRate / 2))
-      ctx.lineWidth = '8'
+      ctx.lineWidth = '4'
       // draw frequency line each 10
-      var step = this.bins / 6
+      var step = this.bins / 8
       for (var i = step; i < this.bins - step; i += step) {
-        ctx.moveTo(i + 18, this.height - 78)
-        ctx.lineTo(i + 18, this.height - 58)
+        ctx.moveTo(i + this.leftMargin, this.fftHeight + this.topMargin + 10)
+        ctx.lineTo(i + this.leftMargin, this.fftHeight + this.topMargin + 20)
         var frequency = baseFrequency + Math.round((this.sampleRate / this.bins) * i)
         var unit = ' KHz'
         if (frequency > 1000) {
@@ -267,18 +318,19 @@ export default {
         // round frequency
         frequency = Math.round(frequency * 100) / 100
         ctx.fillStyle = '#ffffff'
-        ctx.fillText(frequency + unit, i + 18 - 25, this.height - 10)
+        ctx.fillText(frequency + unit, i + this.leftMargin - 35, this.fftHeight + this.topMargin + 45)
       }
       ctx.stroke()
       // ctx.scale(this.scaleX, this.scaleY)
     },
-    reDraw: function () {
+    reDraw: function (line) {
       // Scroll image down
-      var tmpData = this.imageFFT.data.subarray(0, this.imageFFT.data.length - this.width * 4)
+      var tmpData = this.imageFFT.data.subarray(0, this.imageFFT.data.length - this.bins * 4)
       this.imageFFT.data.set(this.bufferRGBA)
       this.imageFFT.data.set(tmpData, this.bufferRGBA.length)
       requestAnimationFrame(() => {
-        this.spectrumCtx.putImageData(this.imageFFT, 20, 20)
+        this.spectrumCtx.putImageData(this.imageFFT, this.leftMargin + 1, this.waterfallYOffset + this.topMargin + 1)
+        this.drawFFT(this.spectrumCtx, line)
       })
     }
   },
@@ -309,7 +361,7 @@ export default {
             const color = this.HSVtoRGB(this.level / 10 - line[c] / 255, 0.7, 0.8)
             this.bufferRGBA.set([color.r, color.g, color.b, 255], c * 4)
           }
-          this.reDraw()
+          this.reDraw(line)
         }
       })
     }
@@ -317,6 +369,12 @@ export default {
   mounted: function () {
     if (this.$route.params != null) {
       this.$nextTick(() => {
+        window.addEventListener('resize', () => {
+          this.$refs.overlay.style.width = this.$refs.parent.clientWidth + 'px'
+          this.$refs.overlay.style.height = this.$refs.parent.clientHeight + 'px'
+          this.$refs.spectrum.style.width = this.$refs.parent.clientWidth + 'px'
+          this.$refs.spectrum.style.height = this.$refs.parent.clientHeight + 'px'
+        })
         // this.width = this.$refs.parent.clientWidth - 40
         // this.height = this.$refs.parent.clientHeight - 40
         this.$refs.overlay.style.width = this.$refs.parent.clientWidth + 'px'
@@ -333,7 +391,7 @@ export default {
         // Prepare websocket connection
         this.serialNumber = this.$route.params.serialNumber
         // Initial buffer
-        this.bufferRGBA = new Uint8Array(this.width * 4)
+        this.bufferRGBA = new Uint8Array(this.bins * 4)
         // Draw once connected
         this.spectrumCtx = this.$refs.spectrum.getContext('2d')
         this.overlayCtx = this.$refs.overlay.getContext('2d')
@@ -370,7 +428,7 @@ export default {
 .full-size {
   width: 100%;
   height: 100%;
-/*  padding: 0px;*/
+  padding: 0px;
 }
 .spacing {
 /*  padding : 15px;*/

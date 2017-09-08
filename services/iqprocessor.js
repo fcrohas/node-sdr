@@ -231,7 +231,7 @@ class IQProcessor {
 		if (this.updateFFT) {
 			return null;
 		}
-		let average = 32;
+		let average = 8;
 		var fftOut = new Uint8Array(floatarr.length / 2);		
 		var fftmean = new Uint8Array(fftOut.length / average);		
 		let result = new Uint8Array(this.size);
@@ -252,9 +252,9 @@ class IQProcessor {
 				//const log = 20 * Math.log10(magnitude);
 				// switch result here
 				if (i < transformSize) {
-					result[j + halfFft] = magnitude * 128;
+					result[j + halfFft] = magnitude * 8;
 				} else {
-					result[j - halfFft] = magnitude * 128;
+					result[j - halfFft] = magnitude * 8;
 				}
 				j++;
 			}

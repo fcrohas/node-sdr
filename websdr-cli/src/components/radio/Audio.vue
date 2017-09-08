@@ -171,6 +171,10 @@ export default {
     if (this.$route.params != null) {
       this.$nextTick(() => {
         this.serialNumber = this.$route.params.serialNumber
+        window.addEventListener('resize', () => {
+          this.$refs.audioSpectrum.style.width = this.$refs.parent.clientWidth + 'px'
+          this.$refs.audioSpectrum.style.height = this.$refs.parent.clientHeight + 'px'
+        })
         // Setup canvas audio analyzer
         const canvasCtx = this.$refs.audioSpectrum.getContext('2d')
         this.width = this.$refs.parent.clientWidth

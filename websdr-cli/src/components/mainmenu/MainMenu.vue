@@ -1,5 +1,5 @@
 <template>
-    <v-navigation-drawer class="pb-0" persistent disable-route-watcher absolute height="100%" clipped enable-resize-watcher v-model="display">
+    <v-navigation-drawer class="pb-0" persistent disable-route-watcher absolute height="100%" clipped v-model="display">
       <v-list dense>
         <v-list-tile href="#/">
           <v-list-tile-action>
