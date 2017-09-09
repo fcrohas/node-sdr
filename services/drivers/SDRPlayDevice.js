@@ -12,8 +12,8 @@ class SDRPlayDevice extends Device {
 		this.bufferData = new Int16Array(this.ASYNC_BUF_NUMBER * this.ASYNC_BUF_SIZE);
 		this.bufferOffset = 0;
 		this.started = false;
-		this.gainReduction = 48;
-		this.LNAState = 3;
+		this.gainReduction = 58;
+		this.LNAState = 4;
 		this.gRdBsystem = 28;
 	}
 
@@ -66,9 +66,8 @@ class SDRPlayDevice extends Device {
 
 	start() {
 		this.driver.RSPII_AntennaControl(this.driver.mir_sdr_RSPII_ANTENNA_B);
-		this.driver.AmPortSelect(1);
+		this.driver.AmPortSelect(0);
 		this.driver.RSPII_RfNotchEnable(0);
-		this.driver.RSPII_BiasTControl(1);
 		if (this.sampleRate < 2000000) {
 			this.driver.DecimateControl(1, 8, 0);
 			this.sampleRate = this.sampleRate * 8;
@@ -111,8 +110,15 @@ class SDRPlayDevice extends Device {
 		if (this.started) {
 			let errorcode = this.driver.ReInit(0, 0, value / 1000000, 0, 0, 0, 0, 0, 0, 0, this.driver.ReasonForReinitT.mir_sdr_CHANGE_RF_FREQ);
 			if (errorcode != 0) {
-				console.log('Reini error', errorcode);
+				console.log('Reinit error', errorcode);
 			}
+		}
+	}
+
+	setGain(value) {
+		super.setGain(value);
+		if (this.started) {
+			this.writeSetting('gainReduction', value);
 		}
 	}
 
@@ -121,14 +127,16 @@ class SDRPlayDevice extends Device {
 		{ type: 'range', name: 'gainReduction', values: '0-59', default: 58 },
 		{ type: 'range', name: 'sampleRate', values: '2000000-10000000', default: 2048000 },
 		{ type: 'range', name: 'frequency', values: this.tuningRange },
-		{ type: 'choice', name: 'antenna', values: ['Port A', 'Port B', 'HI-Z'] },
-		{ type: 'choice', name: 'filter', values: this.device.Bw_MHzT },
-		{ type: 'choice', name: 'localMode', values: ['Undefined', 'Auto', '120Mhz', '144Mhz', '164Mhz'] },
-		{ type: 'choice', name: 'ifMode', values: [0, 450, 1620, 2048]}];
+		{ type: 'choice', name: 'antenna', values: ['Port A', 'Port B', 'HI-Z'], value: 'Port A' },
+		{ type: 'choice', name: 'filter', values: [200, 300, 600, 1536, 5000, 6000, 7000, 8000], value: 1536 },
+		{ type: 'choice', name: 'localMode', values: ['Undefined', 'Auto', '120Mhz', '144Mhz', '164Mhz'], value: 'Auto' },
+		{ type: 'choice', name: 'ifMode', values: [0, 450, 1620, 2048], value: 0},
+		{ type: 'choice', name: 'biast', values: [0, 1], value: 0}];
 	}
 
 	writeSetting(name, value) {
 		let errorcode = 0;
+		console.log('setting '+name+' value='+value);
 		switch(name) {
 			case 'ifMode':
 				errorcode = this.driver.ReInit(0, 0, 0, 0, value, 0, 0, 0, 0, 0, this.driver.ReasonForReinitT.mir_sdr_CHANGE_IF_TYPE);
@@ -162,6 +170,9 @@ class SDRPlayDevice extends Device {
 				break;
 			case 'filter':
 				errorcode = this.driver.ReInit(0, 0, 0, value, 0, 0, 0, 0, 0, 0, this.driver.ReasonForReinitT.mir_sdr_CHANGE_BW_TYPE);
+				break;
+			case 'biast':
+				this.driver.RSPII_BiasTControl(value);
 				break;
 			default:
 		}

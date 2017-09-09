@@ -57,6 +57,10 @@ class Device {
 	getCapabilities() {
 		return [];
 	}
+
+	writeSetting(name, value) {
+
+	}
 }
 
 module.exports = Device;

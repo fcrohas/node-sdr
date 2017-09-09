@@ -15,6 +15,19 @@
             <v-btn flat value="usb" @click="changeModulation('USB')">USB</v-btn>
             <v-btn flat value="lsb" @click="changeModulation('LSB')">LSB</v-btn>
           </v-flex>
+          <v-flex xs12 class="full-size">
+            <v-btn flat value="500" @click="changeFrequencyStep(500)">500 Hz</v-btn>
+            <v-btn flat value="1000" @click="changeFrequencyStep(1000)">1 Khz</v-btn>
+            <v-btn flat value="5000" @click="changeFrequencyStep(5000)">5 Khz</v-btn>
+            <v-btn flat value="12500" @click="changeFrequencyStep(12500)">12.5 Khz</v-btn>
+            <v-btn flat value="50000" @click="changeFrequencyStep(50000)">50 Khz</v-btn>
+          </v-flex>
+          <v-flex xs12 class="full-size">
+            RF
+            <vue-slider v-model="gain.value" 
+                              :min="gain.min" :max="gain.max" :interval="1" :width="'auto'"
+                              :tooltip="'hover'" tooltip-dir="'right'" @callback="changeTunerGain" :lazy="true"></vue-slider>          
+          </v-flex>
           <v-flex>
             <v-btn icon @click="stop()">
               <v-icon>exit_to_app</v-icon>
@@ -27,12 +40,14 @@
 </template>
 
 <script>
+import vueSlider from 'vue-slider-component'
 import { mapGetters, mapActions } from 'vuex'
 import Service from '../../service/api'
 
 export default {
 
   name: 'Control',
+  components: { vueSlider },
   props: {
   },
   computed: {
@@ -47,6 +62,8 @@ export default {
     ...mapActions({
       changeCenterFrequency: 'changeCenterFrequency',
       changeModulation: 'changeModulation',
+      changeTunerGain: 'changeTunerGain',
+      changeFrequencyStep: 'changeFrequencyStep',
       getCapabilities: 'getCapabilities',
       disconnect: 'disconnect'
     }),
@@ -64,7 +81,12 @@ export default {
     return {
       modulation: 'fm',
       disconnected: false,
-      serialNumber: ''
+      serialNumber: '',
+      gain: {
+        value: 58,
+        min: 0,
+        max: 59
+      }
     }
   },
   mounted () {

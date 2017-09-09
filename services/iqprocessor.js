@@ -19,7 +19,7 @@ class IQProcessor {
 		this.fftr = new KissFFT.FFT(size);
 		this.order = 25;
 		this.fftwindow = new Window(size);
-		this.fftwindow.build(Window.hamming);
+		this.fftwindow.build(Window.hann);
 		this.decimationFactor = 1;
 		this.xlatvectArr = null;
 		this.xlatArr = null;		
@@ -28,6 +28,7 @@ class IQProcessor {
 		this.updateAudiorate(this.audiorate);
 		this.now_lpr = 0;
 		this.prev_lpr_index = 0;
+		this.result = new Float32Array(this.size);		
 	}
 
 	updateAudiorate(audiorate) {
@@ -231,49 +232,79 @@ class IQProcessor {
 		if (this.updateFFT) {
 			return null;
 		}
-		let average = 8;
-		var fftOut = new Uint8Array(floatarr.length / 2);		
-		var fftmean = new Uint8Array(fftOut.length / average);		
-		let result = new Uint8Array(this.size);
+		let average = 16;
+		var fftOut = new Float32Array(floatarr.length);		
+		var fftmean = new Uint8Array(floatarr.length / 2 / average);
 		for (var k = 0; k < floatarr.length; k += this.size * 2) {
 			// fft size is 512 so double buffer
 			// Apply window
 			var truncData = floatarr.subarray(k, k + this.size * 2);
-			for (let c = 0; c < this.size; c++) {
-				truncData[c] = this.fftwindow.get()[c] * truncData[c];
+			for (let c = 0; c < this.size * 2; c+=2) {
+				truncData[c] = this.fftwindow.get()[c / 2] * truncData[c];
+				truncData[c + 1] = this.fftwindow.get()[c / 2] * truncData[c + 1];
 			}
 			var transform = this.fftr.forward(truncData);
 			// compute magnitude with db log
-			let j = 0;
+			// let j = 0;
 			var transformSize = transform.length / 2;
-			const halfFft = this.size / 2;
-			for (var i=0; i < transform.length; i += 2) {
-				const magnitude = Math.sqrt(transform[i] * transform[i] + transform[i+1] * transform[i+1])
-				//const log = 20 * Math.log10(magnitude);
-				// switch result here
-				if (i < transformSize) {
-					result[j + halfFft] = magnitude * 8;
-				} else {
-					result[j - halfFft] = magnitude * 8;
-				}
-				j++;
-			}
-			// Average result
-			fftOut.set(result, k / 2);
+			// const halfFft = this.size / 2;
+			fftOut.set(transform.subarray(transformSize), k);
+			fftOut.set(transform.subarray(0, transformSize), k + transformSize);
 		}
 		// Average last n result
-		for (let a = 0; a < fftOut.length; a+=this.size * average) {
-			// Average them
-			for (let b = 0; b < this.size * average; b+=this.size) {
-				if (b == 0) {
-					fftmean.set(fftOut.subarray(a, this.size), a / average);
-				} else {
-					for (let c = 0; c < this.size; c++) {
-						fftmean[a  / average + c] = (fftOut[a + b + c] + fftmean[a  / average + c]) / 2;
+		let j = 0;
+		// average power
+		//this.result.fill(0);
+		for (let a = 0; a < fftOut.length; a+=this.size * 2 * average) {
+			// sum them
+			for (let b = 0; b < this.size * 2 * average; b+=this.size * 2) {
+				for (let c = 0; c < this.size * 2; c+=2) {
+					let I = fftOut[a + b + c];
+					let Q = fftOut[a + b + c + 1];
+					const magnitude = Math.sqrt(I * I + Q * Q);
+					if (c === 0) {
+						this.result[c/2] = magnitude;
+					} else {
+						this.result[c/2] += magnitude;
 					}
 				}
 			}
+			// Compute fft
+			for (let i = 0; i < this.size; i ++) {
+				this.result[i] = this.result[i] / (average - 1);
+				const log = 20 * Math.log10(this.result[i]);
+				// switch result here
+				fftmean[j] = log + 128;
+				//min = Math.min(log, min);
+				//max = Math.max(log, max);
+				j++;
+			}
 		}
+		// Compute fft
+		// let min = 0;
+		// let max = -200;
+		// for (let a = 0; a < fftOut.length; a+=this.size * 2 * average) {
+		// 	// sum them
+		// 	for (let b = 0; b < this.size * 2 * average; b+=this.size * 2) {
+		// 		for (let c = 0; c < this.size * 2; c+=2) {
+		// 			result[c] += fftOut[a + b + c];
+		// 			result[c + 1] += fftOut[a + b + c + 1];
+		// 		}
+		// 	}
+		// 	// Compute fft
+		// 	for (let i= 0; i < this.size * 2; i += 2) {
+		// 		let I = result[i] / average;
+		// 		let Q = result[i + 1] / average;
+		// 		const magnitude = Math.sqrt(I * I + Q * Q);
+		// 		const log = 20 * Math.log10(magnitude);
+		// 		// switch result here
+		// 		fftmean[j] = log + 128;
+		// 		min = Math.min(log, min);
+		// 		max = Math.max(log, max);
+		// 		j++;
+		// 	}
+		// }
+		// console.log('max=',max,'min=',min);
 		return fftmean;
 	}
 }

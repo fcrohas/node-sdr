@@ -39,8 +39,8 @@ addEventListener('message', (event) => {
         break;
       case 'emit':
         if (data.params.ack != null) {
-          websocket.emit(data.params.emit, data.params.message, () => {
-            postMessage({cmd: 'emit', name: data.params.emit, ack : data.params.ack})
+          websocket.emit(data.params.emit, data.params.message, (message) => {
+            postMessage({cmd: 'emit', name: data.params.emit, ack : data.params.ack, message: message})
           })
         } else {
             websocket.emit(data.params.emit, data.params.message)

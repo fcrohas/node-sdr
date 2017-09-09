@@ -8,21 +8,11 @@
             <waterfall class="full-size"></waterfall>
         </v-flex>
         <v-flex xs12 md2 class="full-size">
-            <audio-stream class="full-size"></audio-stream>
+            <audio-stream></audio-stream>
+            <options></options>            
         </v-flex>
     </v-layout>
-
-
-<!--    <vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="1600" :h="400" :x="100" :y="500">
-        <waterfall></waterfall>
-    </vue-draggable-resizable>
-    <vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="800" :h="200" :x="100" :y="100">
-        <control></control>
-    </vue-draggable-resizable>
-    <vue-draggable-resizable :parent="false" :resizable="true" :draggable="true" :w="400" :h="200" :x="800" :y="200">
-        <audio-stream></audio-stream>
-    </vue-draggable-resizable>
- -->   </v-container>
+  </v-container>
   
 </template>
 
@@ -31,10 +21,11 @@ import { mapGetters, mapActions } from 'vuex'
 import Waterfall from './Waterfall'
 import Control from './Control'
 import AudioStream from './Audio'
+import Options from './Options'
 
 export default {
   name: 'Radio',
-  components: { Waterfall, Control, AudioStream },
+  components: { Waterfall, Control, AudioStream, Options },
   computed: mapGetters({
     tunedFrequency: 'tunedFrequency',
     currentBandwidth: 'currentBandwidth',

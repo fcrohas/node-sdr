@@ -116,7 +116,7 @@ router.get('/open/:serialNumber', function(req, res, next) {
 								device.setGain(messages[i].value); 
 								break;
 							case 'capabilities' : 
-								result = device.getCapabilities(); 
+								result = device.getCapabilities();
 								break;
 							case 'modulation' : 
 								iqprocessor.setModulation(messages[i].value); 
@@ -129,9 +129,13 @@ router.get('/open/:serialNumber', function(req, res, next) {
 								device.setFrequency(messages[i].value); 
 								iqprocessor.setFrequency(messages[i].value); 
 								break;
+							case 'setting' :
+								device.writeSetting(messages[i].value.name, messages[i].value.value);
 						}
 					}
-					callback(result);
+					if (callback) {
+						callback(result);
+					}
 				});
 				// Stop devic streaming
 				socket.on('stop', (message, callback) => {

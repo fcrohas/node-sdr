@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="full-size">
+  <v-container fluid class="container">
     <v-layout class="full-size">
       <v-flex xs12 align-end flexbox class="full-size">
         <div ref="parent" class="full-size">
@@ -206,6 +206,10 @@ export default {
 </script>
 
 <style lang="css" scoped>
+.container {
+  width:100%;
+  height:300px;
+}
 .full-size {
   width: 100%;
   height: 100%;

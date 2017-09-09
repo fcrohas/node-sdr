@@ -4,9 +4,9 @@ import Websocket from '../../service/websocket-cli'
 const state = {
   frequency: 103900000,
   bandwidth: 170000,
-  centerFrequency: 103900000,
-  sampleRate: 900001,
-  stepFrequency: 100000,
+  centerFrequency: 104500000,
+  sampleRate: 2100000,
+  stepFrequency: 1000,
   audiorate: 24000,
   connected: false,
   opened: false,
@@ -32,7 +32,6 @@ const actions = {
   connect ({ commit }, serialNumber) {
     Websocket.connect(serialNumber)
     Websocket.onceEvent('connect', () => {
-      console.log('connected')
       Websocket.emit('config', [
         {
           type: 'modulation',
@@ -58,7 +57,6 @@ const actions = {
           type: 'tunergain',
           value: state.tunerGain
         }], () => {
-          console.log('emit start')
           // Start on connect
           Websocket.emit('start', 'test')
           commit(types.POWER_CHANGE, true)
@@ -76,14 +74,13 @@ const actions = {
     })
   },
   changeCenterFrequency ({ commit }, increment) {
-    var newCenterFrequency = state.centerFrequency + increment
+    const newCenterFrequency = state.centerFrequency + increment
     Websocket.emit('config', [{ type: 'centerfrequency', value: newCenterFrequency }], () => {
       commit(types.CENTERFREQUENCY_CHANGE, newCenterFrequency)
     })
   },
   changeModulation ({ commit }, modulationType) {
     Websocket.emit('config', [{ type: 'modulation', value: modulationType }], () => {
-      console.log('modulationType=' + modulationType)
       switch (modulationType) {
         case 'WFM' :
           commit(types.AUDIORATE_CHANGE, 24000)
@@ -128,6 +125,14 @@ const actions = {
   },
   changeFrequencyStep ({ commit }, step) {
     commit(types.STEPFREQUENCY_CHANGE, step)
+  },
+  changeTunerGain ({ commit }, gain) {
+    Websocket.emit('config', [{ type: 'tunergain', value: gain }], () => {
+      commit(types.TUNERGAIN_CHANGE, gain)
+    })
+  },
+  writeSetting ({ commit }, item) {
+    Websocket.emit('config', [{ type: 'setting', value: {name: item.name, value: item.value} }])
   }
 }
 
@@ -156,8 +161,11 @@ const mutations = {
   [types.AUDIORATE_CHANGE] (state, audiorate) {
     state.audiorate = audiorate
   },
-  [types.STEPFREQUENCY_CHANGE] (state, audiorate) {
-    state.audiorate = audiorate
+  [types.STEPFREQUENCY_CHANGE] (state, step) {
+    state.stepFrequency = step
+  },
+  [types.TUNERGAIN_CHANGE] (state, gain) {
+    state.tunerGain = gain
   }
 }
 
