@@ -145,7 +145,7 @@ class SDRPlayDevice extends Device {
 													  this.driver.LoModeT.mir_sdr_LO_168MHz], value: this.driver.LoModeT.mir_sdr_LO_Auto },
 		{ type: 'choice', name: 'ifMode', values: [this.driver.If_kHzT.mir_sdr_IF_Zero,
 												   this.driver.If_kHzT.mir_sdr_IF_0_450,
-												   this.driver.If_kHzT.mir_sdr_IF_1_1620,
+												   this.driver.If_kHzT.mir_sdr_IF_1_620,
 												   this.driver.If_kHzT.mir_sdr_IF_2_048], value: this.driver.If_kHzT.mir_sdr_IF_Zero},
 		{ type: 'choice', name: 'biast', values: [0, 1], value: 0},
 		{ type: 'choice', name: 'notch', values: [0, 1], value: 0},
