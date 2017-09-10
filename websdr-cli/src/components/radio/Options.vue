@@ -1,36 +1,35 @@
 <template>
-<v-expansion-panel expand>
-    <v-expansion-panel-content v-for="(item,i) in capabilities" :key="i">
-      <div slot="header">{{item.name}}</div>
-      <v-card>
-        <v-card-text class="grey lighten-3">
-			<v-container fluid>
-		        <v-layout row wrap>
-		          <v-flex xs12>
-		            <v-select v-if="item.type==='choice'"
-		              v-bind:items="item.values"
-		              v-model="item.value"
-		              label="Select"
-		              single-line
-		              auto
-		              prepend-icon="map"
-                      @change="writeSetting(item)"
-		              hide-details
-		            ></v-select>
-		          </v-flex>
-		        </v-layout>
-			</v-container>        	
-        </v-card-text>
-      </v-card>
-    </v-expansion-panel-content>
-  </v-expansion-panel>
-</template>
+      <v-container fluid grid-list-sm class="full-size">
+        <v-layout row wrap class="scrollbox">
+          <v-flex xs12 v-for="(item,index) in capabilities" :key="item.name">
+                <v-flex xs6>{{item.name}}</v-flex>
+                <v-flex xs6>
+                    <v-select v-if="item.type==='choice'"
+                      v-bind:items="item.values"
+                      v-model="item.value"
+                      label="Select"
+                      single-line
+                      auto
+                      prepend-icon="map"
+                      @change="changeSetting(item, $event)"
+                      hide-details
+                    ></v-select>
+                    <vue-slider v-if="item.type==='range'" v-model="item.value"
+                        :min="item.min" :max="item.max" :interval="item.interval" 
+                        :width="'auto'" :tooltip="'hover'" tooltip-dir="'right'" @callback="changeSetting(item, $event)" :lazy="true"></vue-slider>
+                </v-flex>
+            </v-flex>
+        </v-layout>
+    </v-container>
+ </template>
 
 <script>
+import vueSlider from 'vue-slider-component'
 import { mapGetters, mapActions } from 'vuex'
 export default {
 
   name: 'Options',
+  components: { vueSlider },
   computed: {
     ...mapGetters({
       capabilities: 'capabilities',
@@ -41,20 +40,20 @@ export default {
     ...mapActions({
       getCapabilities: 'getCapabilities',
       writeSetting: 'writeSetting'
-    })
+    }),
+    changeSetting (item, input) {
+      item.value = input
+      this.writeSetting(item)
+    }
   },
   watch: {
     // On connect retrieve capabilities for additional settings
-    isConnected (value) {
-      if (!value) {
-        return
-      }
+    isConnected () {
       this.getCapabilities()
     }
   },
   data () {
     return {
-      value: 200,
       serialNumber: ''
     }
   },
@@ -67,4 +66,14 @@ export default {
 </script>
 
 <style lang="css" scoped>
+.full-size {
+  width: 100%;
+  height: 100%;
+}
+.scrollbox {
+  width: 100%;
+  height: 500px;
+  overflow: auto;
+
+}
 </style>

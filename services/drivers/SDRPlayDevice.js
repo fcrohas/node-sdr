@@ -15,6 +15,10 @@ class SDRPlayDevice extends Device {
 		this.gainReduction = 58;
 		this.LNAState = 4;
 		this.gRdBsystem = 28;
+		this.DCenable = 0;
+		this.IQenable = 0;
+		this.AGCenable = 0;
+		this.GrMode = this.driver.SetGrModeT.mir_sdr_USE_RSP_SET_GR;
 	}
 
 	static getDriverName() {
@@ -65,9 +69,6 @@ class SDRPlayDevice extends Device {
 	}
 
 	start() {
-		this.driver.RSPII_AntennaControl(this.driver.mir_sdr_RSPII_ANTENNA_B);
-		this.driver.AmPortSelect(0);
-		this.driver.RSPII_RfNotchEnable(0);
 		if (this.sampleRate < 2000000) {
 			this.driver.DecimateControl(1, 8, 0);
 			this.sampleRate = this.sampleRate * 8;
@@ -81,7 +82,7 @@ class SDRPlayDevice extends Device {
 				this.driver.If_kHzT.mir_sdr_IF_Zero, 
 				this.LNAState, 
 				this.gRdBsystem, 
-				this.driver.SetGrModeT.mir_sdr_USE_RSP_SET_GR, 
+				this.GrMode, 
 				128, 
 				(iqbuffer,bufferSize,firstSampleNum,grChanged,rfChanged,fsChanged,numSamples, reset) => {
 					this.started = true;
@@ -124,14 +125,36 @@ class SDRPlayDevice extends Device {
 
 	getCapabilities() {
 		return [
-		{ type: 'range', name: 'gainReduction', values: '0-59', default: 58 },
-		{ type: 'range', name: 'sampleRate', values: '2000000-10000000', default: 2048000 },
+		{ type: 'range', name: 'gainReduction', min: 20, max: 59, interval: 1, value: 58 },
+		{ type: 'range', name: 'lnaState', min: 0, max: 8, interval: 1, value: 3 },
+		{ type: 'choice', name: 'sampleRate', values: [256000, 512000, 2048000, 5000000, 6000000, 7000000, 8000000], default: 2048000 },
 		{ type: 'range', name: 'frequency', values: this.tuningRange },
 		{ type: 'choice', name: 'antenna', values: ['Port A', 'Port B', 'HI-Z'], value: 'Port A' },
-		{ type: 'choice', name: 'filter', values: [200, 300, 600, 1536, 5000, 6000, 7000, 8000], value: 1536 },
-		{ type: 'choice', name: 'localMode', values: ['Undefined', 'Auto', '120Mhz', '144Mhz', '164Mhz'], value: 'Auto' },
-		{ type: 'choice', name: 'ifMode', values: [0, 450, 1620, 2048], value: 0},
-		{ type: 'choice', name: 'biast', values: [0, 1], value: 0}];
+		{ type: 'choice', name: 'filter', values: [this.driver.Bw_MHzT.mir_sdr_BW_0_200, 
+												   this.driver.Bw_MHzT.mir_sdr_BW_0_300, 
+												   this.driver.Bw_MHzT.mir_sdr_BW_0_600, 
+												   this.driver.Bw_MHzT.mir_sdr_BW_1_536, 
+												   this.driver.Bw_MHzT.mir_sdr_BW_5_000,
+												   this.driver.Bw_MHzT.mir_sdr_BW_6_000,
+												   this.driver.Bw_MHzT.mir_sdr_BW_7_000,
+												   this.driver.Bw_MHzT.mir_sdr_BW_8_000], value: this.driver.Bw_MHzT.mir_sdr_BW_1_536 },
+		{ type: 'choice', name: 'localMode', values: [this.driver.LoModeT.mir_sdr_LO_Undefined,
+													  this.driver.LoModeT.mir_sdr_LO_Auto,
+													  this.driver.LoModeT.mir_sdr_LO_120MHz,
+													  this.driver.LoModeT.mir_sdr_LO_144MHz,
+													  this.driver.LoModeT.mir_sdr_LO_168MHz], value: this.driver.LoModeT.mir_sdr_LO_Auto },
+		{ type: 'choice', name: 'ifMode', values: [this.driver.If_kHzT.mir_sdr_IF_Zero,
+												   this.driver.If_kHzT.mir_sdr_IF_0_450,
+												   this.driver.If_kHzT.mir_sdr_IF_1_1620,
+												   this.driver.If_kHzT.mir_sdr_IF_2_048], value: this.driver.If_kHzT.mir_sdr_IF_Zero},
+		{ type: 'choice', name: 'biast', values: [0, 1], value: 0},
+		{ type: 'choice', name: 'notch', values: [0, 1], value: 0},
+		{ type: 'choice', name: 'dcoffset', values: [0, 1], value: 0},
+		{ type: 'choice', name: 'iqimbalance', values: [0, 1], value: 0},
+		{ type: 'choice', name: 'agccontrol', values: [this.driver.AgcControlT.mir_sdr_AGC_DISABLE, 
+												this.driver.AgcControlT.mir_sdr_AGC_100HZ, 
+												this.driver.AgcControlT.mir_sdr_AGC_50HZ, 
+												this.driver.AgcControlT.mir_sdr_AGC_5HZ], value: this.driver.AgcControlT.mir_sdr_AGC_DISABLE}];
 	}
 
 	writeSetting(name, value) {
@@ -145,7 +168,22 @@ class SDRPlayDevice extends Device {
 				errorcode = this.driver.ReInit(0, 0, 0, 0, 0, value, 0, 0, 0, 0, this.driver.ReasonForReinitT.mir_sdr_CHANGE_LO_MODE);
 				break;
 			case 'gainReduction':
+				this.gainReduction = value;
 				errorcode = this.driver.ReInit(this.gainReduction, 0, 0, 0, 0, 0, this.LNAState, this.gRdBsystem, this.GrMode, 0, this.driver.ReasonForReinitT.mir_sdr_CHANGE_GR);
+				// try {
+				// 	this.driver.RSP_SetGr(this.gainReduction, this.LNAState, 1, 0);
+				// } catch(e) {
+				// 	console.log("Unable to set gain. Error:"+e);
+				// }
+				break;
+			case 'lnaState':
+				this.LNAState = value;
+				errorcode = this.driver.ReInit(this.gainReduction, 0, 0, 0, 0, 0, this.LNAState, this.gRdBsystem, this.GrMode, 0, this.driver.ReasonForReinitT.mir_sdr_CHANGE_GR);
+				// try{
+				// 	this.driver.RSP_SetGr(this.gainReduction, this.LNAState, 1, 0);
+				// } catch(e) {
+				// 	console.log("Unable to set gain. Error:"+e);
+				// }
 				break;
 			case 'sampleRate':
 				errorcode = this.driver.ReInit(0, value / 1000000, 0, 0, 0, 0, 0, 0, 0, 0, this.driver.ReasonForReinitT.mir_sdr_CHANGE_FS_FREQ);
@@ -174,7 +212,20 @@ class SDRPlayDevice extends Device {
 			case 'biast':
 				this.driver.RSPII_BiasTControl(value);
 				break;
+			case 'notch':
+				this.driver.RSPII_RfNotchEnable(value);
+				break;
+			case 'dcoffset':
+				this.DCenable = (this.DCenable === 0) ? 1 : 0;
+				this.driver.DCoffsetIQimbalanceControl(this.DCenable, this.IQenable);
+			case 'iqimbalance':
+				this.IQenable = (this.IQenable === 0) ? 1 : 0;
+				this.driver.DCoffsetIQimbalanceControl(this.DCenable, this.IQenable);
+				break;
+			case 'agccontrol':
+				this.driver.AgcControl(value, -30.0, 0, 0, 0, 0, this.LNAState);
 			default:
+
 		}
 
 		if (errorcode != 0) {
