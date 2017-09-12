@@ -74,7 +74,7 @@ addEventListener('message', (event) => {
         break;
       case 'onAudioFrame':
         // Prepare Opus decompress
-        ringbuffer = new Float32Array(data.params.sampleRate * 5)
+        ringbuffer = new Float32Array(data.params.sampleRate * 4)
         ringwriteoffset = 0
         ringreadoffset = 0
         ringavailable = 0

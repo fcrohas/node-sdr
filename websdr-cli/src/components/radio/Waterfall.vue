@@ -306,11 +306,11 @@ export default {
       ctx.stroke()
       ctx.beginPath()
       ctx.lineWidth = '2'
-      ctx.strokeStyle = 'white'
+      ctx.strokeStyle = 'lightgray'
       for (let i = 0; i < this.bins; i++) {
         let value = this.fftHeight - data[i] * scale + offset
         // limit value
-        value = Math.min(this.fftHeight, value)
+        value = Math.min(this.topMargin + this.fftHeight - 2, value)
         value = Math.max(0, value)
         if (i === 0) {
           ctx.moveTo(this.leftMargin + 1 + i, this.topMargin + value)
@@ -322,7 +322,10 @@ export default {
       ctx.lineTo(this.leftMargin + this.bins + 1, this.topMargin + this.fftHeight + 10)
       ctx.lineTo(this.leftMargin + 1, this.topMargin + this.fftHeight + 10)
       ctx.closePath()
-      ctx.fillStyle = 'rgba(30,30,30,0.8)'
+      const gradient = ctx.createLinearGradient(0, 0, 0, this.fftHeight)
+      gradient.addColorStop(0, 'rgba(240,240,240,0.6)')
+      gradient.addColorStop(1, 'rgba(30,30,240,0.6)')
+      ctx.fillStyle = gradient
       ctx.fill()
       ctx.strokeStyle = 'white'
       ctx.stroke()

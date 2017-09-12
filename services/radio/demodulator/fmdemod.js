@@ -2,13 +2,15 @@ const Demodulator = require('./demodulator');
 
 class FMDemod extends Demodulator {
 
-	constructor(mode) {
+	constructor(mode, opts) {
 		super();
 		this.pre_r = 0;
 		this.pre_j = 0;
 		this.avg = 0;
+		this.enableDeemphasis = opts.deemph;
+		this.enableDcblock = opts.dcblock;
 		this.discriminant = null;
-		this.deemph_a = 1.0/((1.0-Math.exp(-1.0/(256000 * 75e-6))));
+		this.deemph_a = 1.0/((1.0-Math.exp(-1.0/(256000 * 50e-6))));
 		switch(mode) {
 			case 0 : this.discriminant = this.polar_disc_fast; break;
 			case 1 : this.discriminant = this.polar_discriminant; break;
@@ -70,7 +72,7 @@ class FMDemod extends Demodulator {
 
 	polar_disc_fast(ar, aj, br, bj) {
 		const complex = this.multiply(ar, aj, br, -bj);
-		return this.fast_atan2(complex.cj, complex.cr);
+		return this.fast_atan2_bis(complex.cj, complex.cr);
 
 	}
 
@@ -103,7 +105,15 @@ class FMDemod extends Demodulator {
 
 		this.pre_r = pr;
 		this.pre_j = pj;
-		return this.dc_block_filter(result); // this.deemph_filter(
+
+		if (this.enableDcblock) {
+			result = this.dc_block_filter(result); 
+		}
+		if (this.enableDeemphasis) {
+			result = this.deemph_filter(result);
+		}
+
+		return result;
 	}
 }
 

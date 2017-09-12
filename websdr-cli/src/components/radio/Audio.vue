@@ -16,16 +16,22 @@
         </div>
       </v-flex>
     </v-layout>
+    <v-layout class="full-size" row wrap>
+      <v-flex xs12 flexbox class="full-size">
+          <vue-slider v-model="volume" :min="0.1" :max="2" :interval="0.1" :width="200" :tooltip="'hover'" tooltip-dir="'right'" @callback="volumeChanged"></vue-slider>      
+      </v-flex>
+    </v-layout>
   </v-container>
 </template>
 
 <script>
+import vueSlider from 'vue-slider-component'
 import { mapGetters } from 'vuex'
 import Websocket from '../../service/websocket-cli'
 
 export default {
   name: 'AudioStream',
-
+  components: { vueSlider },
   data () {
     return {
       playBufferSize: 24000,
@@ -38,7 +44,8 @@ export default {
       analyzer: null,
       width: 320,
       height: 255,
-      pcmData: []
+      pcmData: [],
+      volume: 1
     }
   },
   computed: {
@@ -47,7 +54,7 @@ export default {
       audiorate: 'audiorate'
     }),
     getAvailableBufferSize () {
-      return this.pcmData.length * 100 / 10
+      return this.pcmData.length * 100 / 6
     },
     getBufferStatus () {
       if (this.ringavailable < this.playBufferSize) {
@@ -108,6 +115,11 @@ export default {
       canvasCtx.lineTo(this.width, this.height / 2)
       canvasCtx.stroke()
       requestAnimationFrame(() => { this.draw(canvasCtx) })
+    },
+    volumeChanged (value) {
+      if (this.gainNode != null) {
+        this.gainNode.gain.value = value
+      }
     }
   },
   watch: {
@@ -150,13 +162,13 @@ export default {
         // Add decoded pcm to list
         this.pcmData.push(pcm)
         // 8 s buffering
-        if ((this.pcmData.length > 10) && (!this.isPlaying)) {
+        if ((this.pcmData.length > 5) && (!this.isPlaying)) {
           const source = this.createPlayBuffer(this.pcmData.shift())
           this.time = this.context.currentTime + 1
           source.start(this.time)
           this.time += source.buffer.duration
           let i = 0
-          while (i < 5) {
+          while (i < 4) {
             const source = this.createPlayBuffer(this.pcmData.shift())
             source.start(this.time)
             this.time += source.buffer.duration
@@ -189,7 +201,7 @@ export default {
         this.context = new window.AudioContext()
         // create a gain node
         this.gainNode = this.context.createGain()
-        this.gainNode.gain.value = 1
+        this.gainNode.gain.value = this.volume
         // create analyzer visualization
         this.analyzer = this.context.createAnalyser()
         this.analyzer.fftSize = 128

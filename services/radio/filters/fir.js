@@ -5,6 +5,7 @@ class FIR {
 		this.window = null;
 		this.bufferLength = 0;
 		this.buffer = new Float32Array();
+		this.output = new Float32Array();
 	}
 
 	setWindow(window) {
@@ -125,44 +126,46 @@ class FIR {
 	}
 
 	doFilter(input) {
-		let output = new Float32Array(input.length);
 		if (this.bufferLength != input.length + this.fir.length) {
 			this.buffer = new Float32Array(input.length + this.fir.length); // IQ buffer so 2 bytes...
 			this.bufferLength = input.length + this.fir.length;
+			this.output = new Float32Array(input.length);			
 		}
+		this.output.fill(0);
 		this.buffer.set(input, this.fir.length);
 		for (let n = 0; n < input.length; n += 2) {
 			let inputp = this.buffer.subarray(n , n + this.fir.length);
 /*			inputp = inputp.reverse();*/
 			let pos = inputp.length - 1;
 			for (let k = 0; k < this.fir.length; k+=2) {
-				output[n] += this.fir[k] * inputp[pos - 1] - this.fir[k + 1] * inputp[pos];
-				output[n + 1] += this.fir[k] * inputp[pos] + this.fir[k + 1] * inputp[pos - 1];
-				pos--;
+				this.output[n] += this.fir[k] * inputp[pos - 1] + this.fir[k + 1] * inputp[pos];
+				this.output[n + 1] += this.fir[k + 1] * inputp[pos - 1] - this.fir[k] * inputp[pos];
+				pos-=2;
 			}
 		}
 		this.buffer.set(input.subarray(input.length - this.fir.length));
-		return output;
+		return this.output;
 	}
 
 	doFilterReal(input) {
-		let output = new Float32Array(input.length);
 		if (this.bufferLength != input.length + this.fir.length / 2) {
 			this.buffer = new Float32Array(input.length + this.fir.length / 2); // IQ buffer so 2 bytes...
 			this.bufferLength = input.length + this.fir.length / 2;
+			this.output = new Float32Array(input.length);			
 		}
+		this.output.fill(0);
 		this.buffer.set(input, this.fir.length / 2);
 		for (let n = 0; n < input.length; n ++) {
 			let inputp = this.buffer.subarray(n , n + this.fir.length / 2);
 /*			inputp = inputp.reverse();*/
 			let pos = inputp.length - 1;
-			for (let k = 0; k < this.fir.length; k+=2) {
-				output[n] += this.fir[k] * inputp[pos];
+			for (let k = 0; k < this.fir.length / 2; k++) {
+				this.output[n] += this.fir[k * 2] * inputp[pos];
 				pos--;
 			}
 		}
 		this.buffer.set(input.subarray(input.length - this.fir.length / 2));
-		return output;
+		return this.output;
 	}
 }
 

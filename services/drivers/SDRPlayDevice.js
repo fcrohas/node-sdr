@@ -75,6 +75,8 @@ class SDRPlayDevice extends Device {
 		} else {
 			//this.driver.DecimateControl(1, 2, 0);
 		}
+		this.driver.DCoffsetIQimbalanceControl(1, 1);	
+		//this.driver.SetDcMode(5,0);
 		this.driver.StreamInit(this.gainReduction, 
 				this.sampleRate / 1000000, 
 				this.centerFrequency / 1000000, 
@@ -192,16 +194,16 @@ class SDRPlayDevice extends Device {
 				switch(value) {
 					case 'Port A': 
 						this.driver.AmPortSelect(0);
-						this.driver.RSPII_AntennaControl(this.driver.mir_sdr_RSPII_ANTENNA_A);
+						this.driver.RSPII_AntennaControl(this.driver.RSPII_AntennaSelectT.mir_sdr_RSPII_ANTENNA_A);
 						break;
 					case 'Port B':
 						this.driver.AmPortSelect(0);
-						this.driver.RSPII_AntennaControl(this.driver.mir_sdr_RSPII_ANTENNA_B);
+						this.driver.RSPII_AntennaControl(this.driver.RSPII_AntennaSelectT.mir_sdr_RSPII_ANTENNA_B);
 						break;
 					case 'HI-Z': 
 						// Select AM port then reinit
 						this.driver.AmPortSelect(1);
-						errorcode = this.driver.ReInit(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, this.driver.ReasonForReinitT.mir_sdr_CHANGE_AM_PORT);
+						errorcode = this.driver.ReInit(this.gainReduction, 0, 0, 0, 0, 0, this.LNAState, this.gRdBsystem, this.GrMode, 0, this.driver.ReasonForReinitT.mir_sdr_CHANGE_AM_PORT);
 						break;
 					default:
 				}
@@ -216,10 +218,10 @@ class SDRPlayDevice extends Device {
 				this.driver.RSPII_RfNotchEnable(value);
 				break;
 			case 'dcoffset':
-				this.DCenable = (this.DCenable === 0) ? 1 : 0;
+				this.DCenable = value;
 				this.driver.DCoffsetIQimbalanceControl(this.DCenable, this.IQenable);
 			case 'iqimbalance':
-				this.IQenable = (this.IQenable === 0) ? 1 : 0;
+				this.IQenable = value;
 				this.driver.DCoffsetIQimbalanceControl(this.DCenable, this.IQenable);
 				break;
 			case 'agccontrol':
