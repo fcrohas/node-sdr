@@ -4,20 +4,23 @@ class Demodulator {
 		this.prev_index = 0;
 		this.now_r = 0;
 		this.now_j = 0;
+		this.result = new Float32Array();		
 	}
 
 	dc_block_filter(pcm) {
 		let avg = 0;
-		let sum = 0;
+		// Do average
 		for (let i=0; i < pcm.length; i++) {
-			sum += pcm[i];
+			avg += pcm[i];
 		}
-		avg = sum / pcm.length;
-		avg = (avg + this.dc_avg * 9) / 10;
+		avg = avg / pcm.length;
+		// Diff from previous run
+		const avgdiff = avg - this.dc_avg;
+		// Remove dc
 		for (let i=0; i < pcm.length; i++) {
-			pcm[i] -= avg;
+			pcm[i] -= this.dc_avg + avgdiff * i / pcm.length;
 		}
-		this.dc_avg = avg;
+		this.dc_avg = avgdiff;
 		return pcm;
 	}
 
@@ -37,7 +40,15 @@ class Demodulator {
 			this.now_j = 0;
 			d2+=2;
 		}
-		return d2;
+		// Cut to new length
+		return dataarr.subarray(0, d2);
+	}
+
+	demodulate(buffer) {
+		// Allocate new buufer only if needed
+		if (this.result.length != buffer.length / 2) {
+			this.result = new Float32Array(buffer.length / 2);
+		}
 	}
 }
 

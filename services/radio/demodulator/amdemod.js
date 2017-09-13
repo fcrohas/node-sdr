@@ -7,11 +7,12 @@ class AMDemod extends Demodulator  {
 	}
 
 	demodulate(buffer) {
-		let result = new Float32Array(buffer.length / 2);
+		super.demodulate(buffer);
+		// to work
 		for (let i = 0; i < buffer.length; i+=2) {
-			result[i/2] = Math.sqrt(buffer[i] * buffer[i] + buffer[i+1] * buffer[i + 1]);
+			this.result[i/2] = Math.sqrt(buffer[i] * buffer[i] + buffer[i+1] * buffer[i + 1]);
 		}
-		return this.dc_block_filter(result); 
+		return this.dc_block_filter(this.result); 
 	}
 
 }

@@ -159,8 +159,8 @@ class FIR {
 			let inputp = this.buffer.subarray(n , n + this.fir.length / 2);
 /*			inputp = inputp.reverse();*/
 			let pos = inputp.length - 1;
-			for (let k = 0; k < this.fir.length / 2; k++) {
-				this.output[n] += this.fir[k * 2] * inputp[pos];
+			for (let k = 0; k < this.fir.length; k+=2) {
+				this.output[n] += this.fir[k] * inputp[pos];
 				pos--;
 			}
 		}

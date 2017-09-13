@@ -94,11 +94,12 @@ class FMDemod extends Demodulator {
 	}
 
 	demodulate(buffer) {
-		let result = new Float32Array(buffer.length / 2);
+		// 
+		super.demodulate(buffer);
 		let pr = this.pre_r;
 		let pj = this.pre_j;
 		for (let i = 0; i < buffer.length; i+=2) {
-			result[i/2] = this.discriminant(buffer[i], buffer[i+1], pr, pj);
+			this.result[i/2] = this.discriminant(buffer[i], buffer[i+1], pr, pj);
 			pr = buffer[i];
 			pj = buffer[i + 1];
 		}
@@ -107,13 +108,13 @@ class FMDemod extends Demodulator {
 		this.pre_j = pj;
 
 		if (this.enableDcblock) {
-			result = this.dc_block_filter(result); 
+			this.result = this.dc_block_filter(this.result); 
 		}
 		if (this.enableDeemphasis) {
-			result = this.deemph_filter(result);
+			this.result = this.deemph_filter(this.result);
 		}
 
-		return result;
+		return this.result;
 	}
 }
 

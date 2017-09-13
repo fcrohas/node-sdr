@@ -21,14 +21,14 @@ class IQProcessor {
 		this.fftwindow = new Window(size);
 		this.fftwindow.build(Window.hamming);
 		this.decimationFactor = 1;
-		this.xlatvectArr = null;
+		this.xlat = { cosine: 0, sine: 0, deltaCosine: 0, deltaSine: 0};
 		this.xlatArr = null;		
 		this.wc0 = 0;
 		this.computeDecimation();
 		this.updateAudiorate(this.audiorate);
 		this.now_lpr = 0;
 		this.prev_lpr_index = 0;
-		this.result = new Float32Array(this.size);		
+		this.fftResult = new Float32Array(this.size);		
 	}
 
 	updateAudiorate(audiorate) {
@@ -49,7 +49,9 @@ class IQProcessor {
 
 	computeFrequencyXlat() {
 		this.wc0 = 2.0 * Math.PI * (this.frequency  - this.centerFrequency) / this.sampleRate;				
-		this.xlatvectArr = null;
+		// update delta(s)
+		this.xlat.deltaCosine = Math.cos(this.wc0);
+		this.xlat.deltaSine = Math.sin(this.wc0);
 	}
 
 	canDemodulate() {
@@ -193,45 +195,44 @@ class IQProcessor {
 		return pcmdata.subarray(0, i2);
 	}
 
-	doDemodulate(floatarr) {
-		if (this.updateDemodulate) {
-			return null;
-		}
+	xlatFrequency(floatarr) {
 		if ((this.xlatArr == null) || (this.xlatArr.length != floatarr.length)) {
 			this.xlatArr = new Float32Array(floatarr.length);
 		}
-		// Prepare translation only if needed
-		if (((this.xlatvectArr ==null) || (this.xlatvectArr.length != floatarr.length)) && (this.wc0 != 0)) {
-			this.xlatvectArr = new Float32Array(floatarr.length);
-			let sinc = 0;
-			for (let i = 0; i < floatarr.length; i+=2) {
-				this.xlatvectArr[i] = Math.cos(this.wc0 * sinc);
-				this.xlatvectArr[i + 1] = Math.sin(this.wc0 * sinc);
-				sinc++;
-			}
-		}
 		// translate if required
 		if (this.wc0 != 0) {
+			// Code from Google Radio
+			// better implementation that my previous
 			for (let i = 0; i < floatarr.length; i+=2) {
-				this.xlatArr[i] = floatarr[i] * this.xlatvectArr[i] + floatarr[i + 1] * this.xlatvectArr[i + 1];
-				this.xlatArr[i + 1] = floatarr[i + 1] * this.xlatvectArr[i] - floatarr[i] * this.xlatvectArr[i + 1];
+				this.xlatArr[i] = floatarr[i] * this.xlat.cosine - floatarr[i + 1] * this.xlat.sine;
+				this.xlatArr[i + 1] = floatarr[i] * this.xlat.sine + floatarr[i + 1] * this.xlat.cosine;
+				// compute new cos/sin
+				var newSine = this.xlat.cosine * this.xlat.deltaSine + this.xlat.sine * this.xlat.deltaCosine;
+				this.xlat.cosine = this.xlat.cosine * this.xlat.deltaCosine - this.xlat.sine * this.xlat.deltaSine;
+				this.xlat.sine = newSine;
 			}
 		} else {
 			this.xlatArr.set(floatarr);
 		}
+		return this.xlatArr;
+	}
 
+	doDemodulate(floatarr) {
+		if (this.updateDemodulate) {
+			return null;
+		}
+		// translate frequency
+		const xlating = this.xlatFrequency(floatarr);
 		// Decimate
-		const d2 = this.demodulator.decimate(this.xlatArr, this.decimationFactor);
-		// use new length for decimated array
-		const decimatedArr = this.xlatArr.subarray(0, d2);
-		// low pass filter decimated array to affine result
+		const decimatedArr = this.demodulator.decimate(xlating, this.decimationFactor);
+		// low pass filter decimated array with user bandwidth
 		const lpfiltered = this.lpfir.doFilter(decimatedArr);
 		// demodulate audio
-		const floatResult = this.demodulator.demodulate(lpfiltered);
-		// low pass audio
-		const lowpass = this.audiofilter.doFilterReal(floatResult)
+		const demodulated = this.demodulator.demodulate(lpfiltered);
 		// do resample to audio samplerate
-		return this.doResample(lowpass);
+		const resampeld = this.doResample(demodulated);
+		// low pass audio
+		return this.audiofilter.doFilterReal(resampeld);
 	}
 
 	doFFT(floatarr) {
@@ -268,13 +269,13 @@ class IQProcessor {
 					let I = fftOut[a + b + c];
 					let Q = fftOut[a + b + c + 1];
 					const magnitude = I * I + Q * Q;
-					this.result[c/2] += magnitude;
+					this.fftResult[c/2] += magnitude;
 				}
 			}
 			// Compute fft
 			for (let i = 0; i < this.size; i ++) {
-				this.result[i] = Math.sqrt(this.result[i] / average);
-				const log = 20 * Math.log10(this.result[i]);
+				this.fftResult[i] = Math.sqrt(this.fftResult[i] / average);
+				const log = 20 * Math.log10(this.fftResult[i]);
 				// switch result here
 				fftmean[j] = log + 128;
 				//min = Math.min(log, min);
