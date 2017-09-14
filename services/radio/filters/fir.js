@@ -125,6 +125,13 @@ class FIR {
 		}
 	}
 
+	computeTapsLength(maxAttenuationDb, fStop, fPass) {
+		const transitionBand = (fStop - fPass) / this.sampleRate;
+		const taps = maxAttenuationDb / (22 * transitionBand);
+		console.log('Compute '+Math.round(taps)+' taps for '+maxAttenuationDb+' dB with fStop='+fStop+' fPass='+fPass+' fs='+this.sampleRate);		
+		return Math.round(taps);
+	}
+
 	doFilter(input) {
 		if (this.bufferLength != input.length + this.fir.length) {
 			this.buffer = new Float32Array(input.length + this.fir.length); // IQ buffer so 2 bytes...
@@ -133,7 +140,7 @@ class FIR {
 		}
 		this.output.fill(0);
 		this.buffer.set(input, this.fir.length);
-		for (let n = 0; n < input.length; n += 2) {
+		for (let n = this.fir.length; n < input.length; n += 2) {
 			let inputp = this.buffer.subarray(n , n + this.fir.length);
 /*			inputp = inputp.reverse();*/
 			let pos = inputp.length - 1;
@@ -143,7 +150,7 @@ class FIR {
 				pos-=2;
 			}
 		}
-		this.buffer.set(input.subarray(input.length - this.fir.length));
+		this.buffer.copyWithin(0, input.length);
 		return this.output;
 	}
 
@@ -155,7 +162,7 @@ class FIR {
 		}
 		this.output.fill(0);
 		this.buffer.set(input, this.fir.length / 2);
-		for (let n = 0; n < input.length; n ++) {
+		for (let n = this.fir.length / 2; n < input.length; n ++) {
 			let inputp = this.buffer.subarray(n , n + this.fir.length / 2);
 /*			inputp = inputp.reverse();*/
 			let pos = inputp.length - 1;
@@ -164,7 +171,7 @@ class FIR {
 				pos--;
 			}
 		}
-		this.buffer.set(input.subarray(input.length - this.fir.length / 2));
+		this.buffer.copyWithin(0, input.length);
 		return this.output;
 	}
 }

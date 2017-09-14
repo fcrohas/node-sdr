@@ -9,10 +9,17 @@ class AMDemod extends Demodulator  {
 	demodulate(buffer) {
 		super.demodulate(buffer);
 		// to work
+		let sigSum = 0;
 		for (let i = 0; i < buffer.length; i+=2) {
-			this.result[i/2] = Math.sqrt(buffer[i] * buffer[i] + buffer[i+1] * buffer[i + 1]);
+			const amplitude = Math.sqrt(buffer[i] * buffer[i] + buffer[i+1] * buffer[i + 1]);
+			this.result[i/2] = amplitude;
+			sigSum += amplitude;
 		}
-		return this.dc_block_filter(this.result); 
+		// const halfPoint = sigSum / this.result.length;
+		// for (let i = 0; i < this.result.length; i++) {
+		// 	this.result[i] = (this.result[i] - halfPoint) / halfPoint;
+		// }
+		return this.result; 
 	}
 
 }

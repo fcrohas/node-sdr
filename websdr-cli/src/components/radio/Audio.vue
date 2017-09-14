@@ -54,7 +54,7 @@ export default {
       audiorate: 'audiorate'
     }),
     getAvailableBufferSize () {
-      return this.pcmData.length * 100 / 6
+      return Math.round(this.pcmData.length * 100 / 6)
     },
     getBufferStatus () {
       if (this.ringavailable < this.playBufferSize) {

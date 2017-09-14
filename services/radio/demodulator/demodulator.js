@@ -20,7 +20,7 @@ class Demodulator {
 		for (let i=0; i < pcm.length; i++) {
 			pcm[i] -= this.dc_avg + avgdiff * i / pcm.length;
 		}
-		this.dc_avg = avgdiff;
+		this.dc_avg = this.dc_avg + avgdiff;
 		return pcm;
 	}
 
