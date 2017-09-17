@@ -69,16 +69,23 @@ class SDRPlayDevice extends Device {
 	}
 
 	start() {
-		if (this.sampleRate < 2000000) {
-			this.driver.DecimateControl(1, 8, 0);
-			this.sampleRate = this.sampleRate * 8;
-		} else {
-			//this.driver.DecimateControl(1, 2, 0);
-		}
 		this.driver.DCoffsetIQimbalanceControl(1, 1);	
+		let decimate = 1;
+		if (this.sampleRate / 1000000 < 2.0) {
+			// Activate decimation
+			while (this.sampleRate * decimate / 1000000 < 2.0) decimate *= 2;
+			if (decimate > 32) decimate = 32;
+			// activate decimation
+			console.log('Activate decimation '+decimate);
+			this.driver.DecimateControl(1, decimate, 0);
+		} else {
+			this.driver.DecimateControl(0, 2, 0);
+		}
+
 		//this.driver.SetDcMode(5,0);
+		console.log('start streamInit for sampleRate ', this.sampleRate, 'with recalculated ', this.sampleRate * decimate);
 		this.driver.StreamInit(this.gainReduction, 
-				this.sampleRate / 1000000, 
+				this.sampleRate * decimate / 1000000, 
 				this.centerFrequency / 1000000, 
 				this.driver.Bw_MHzT.mir_sdr_BW_1_536, 
 				this.driver.If_kHzT.mir_sdr_IF_Zero, 
@@ -129,7 +136,7 @@ class SDRPlayDevice extends Device {
 		return [
 		{ type: 'range', name: 'gainReduction', min: 20, max: 59, interval: 1, value: 58 },
 		{ type: 'range', name: 'lnaState', min: 0, max: 8, interval: 1, value: 3 },
-		{ type: 'choice', name: 'sampleRate', values: [256000, 512000, 2048000, 5000000, 6000000, 7000000, 8000000], default: 2048000 },
+		{ type: 'choice', name: 'sampleRate', values: [192000, 384000, 768000, 1536000, 3072000, 6000000, 7000000, 8000000], default: 2048000 },
 		{ type: 'range', name: 'frequency', values: this.tuningRange },
 		{ type: 'choice', name: 'antenna', values: ['Port A', 'Port B', 'HI-Z'], value: 'Port A' },
 		{ type: 'choice', name: 'filter', values: [this.driver.Bw_MHzT.mir_sdr_BW_0_200, 
@@ -188,7 +195,21 @@ class SDRPlayDevice extends Device {
 				// }
 				break;
 			case 'sampleRate':
-				errorcode = this.driver.ReInit(0, value / 1000000, 0, 0, 0, 0, 0, 0, 0, 0, this.driver.ReasonForReinitT.mir_sdr_CHANGE_FS_FREQ);
+				let decimate = 1;
+				if (value / 1000000 < 2.0) {
+					// Activate decimation
+					while (value * decimate / 1000000 < 2.0) decimate *= 2;
+					if (decimate > 32) decimate = 32;
+					// activate decimation
+					console.log('Activate decimation reinit '+decimate);
+					this.driver.DecimateControl(1, decimate, 0);
+				} else {
+					this.driver.DecimateControl(0, 2, 0);
+				}
+				// reinit only if value are   different
+				if (value != this.sampleRate) {
+					errorcode = this.driver.ReInit(0, value * decimate / 1000000, 0, 0, 0, 0, 0, 0, 0, 0, this.driver.ReasonForReinitT.mir_sdr_CHANGE_FS_FREQ);
+				}
 				break;
 			case 'antenna':
 				switch(value) {
@@ -231,7 +252,7 @@ class SDRPlayDevice extends Device {
 		}
 
 		if (errorcode != 0) {
-			console.log('Reini error', errorcode);
+			console.log('Reinit error for command', name, ' with value ', value, ' error=',errorcode);
 		}
 	}
 

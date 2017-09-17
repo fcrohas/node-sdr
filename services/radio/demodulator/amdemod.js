@@ -15,10 +15,10 @@ class AMDemod extends Demodulator  {
 			this.result[i/2] = amplitude;
 			sigSum += amplitude;
 		}
-		// const halfPoint = sigSum / this.result.length;
-		// for (let i = 0; i < this.result.length; i++) {
-		// 	this.result[i] = (this.result[i] - halfPoint) / halfPoint;
-		// }
+		const halfPoint = sigSum / this.result.length;
+		for (let i = 0; i < this.result.length; i++) {
+			this.result[i] = (this.result[i] - halfPoint) / halfPoint;
+		}
 		return this.result; 
 	}
 

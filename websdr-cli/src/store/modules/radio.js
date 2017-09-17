@@ -3,10 +3,10 @@ import Websocket from '../../service/websocket-cli'
 
 const state = {
   frequency: 144800000,
-  bandwidth: 8000,
+  bandwidth: 12500,
   centerFrequency: 145000000,
-  sampleRate: 2100000,
-  stepFrequency: 1000,
+  sampleRate: 1536000,
+  stepFrequency: 12500,
   audiorate: 24000,
   connected: false,
   opened: false,

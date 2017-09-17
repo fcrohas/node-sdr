@@ -127,30 +127,32 @@ class FIR {
 
 	computeTapsLength(maxAttenuationDb, fStop, fPass) {
 		const transitionBand = (fStop - fPass) / this.sampleRate;
-		const taps = maxAttenuationDb / (22 * transitionBand);
-		console.log('Compute '+Math.round(taps)+' taps for '+maxAttenuationDb+' dB with fStop='+fStop+' fPass='+fPass+' fs='+this.sampleRate);		
-		return Math.round(taps);
+		let taps = Math.round(maxAttenuationDb / (22 * transitionBand));
+		console.log('Compute '+((taps%2) ? taps : taps+1)+' taps for '+maxAttenuationDb+' dB with fStop='+fStop+' fPass='+fPass+' fs='+this.sampleRate);		
+		return (taps%2) ? taps : taps+1;
 	}
 
 	doFilter(input) {
 		if (this.bufferLength != input.length + this.fir.length) {
 			this.buffer = new Float32Array(input.length + this.fir.length); // IQ buffer so 2 bytes...
 			this.bufferLength = input.length + this.fir.length;
-			this.output = new Float32Array(input.length);			
+			this.output = new Float32Array(input.length - this.fir.length);			
 		}
 		this.output.fill(0);
 		this.buffer.set(input, this.fir.length);
+		let outpos = 0;
 		for (let n = this.fir.length; n < input.length; n += 2) {
 			let inputp = this.buffer.subarray(n , n + this.fir.length);
 /*			inputp = inputp.reverse();*/
 			let pos = inputp.length - 1;
 			for (let k = 0; k < this.fir.length; k+=2) {
-				this.output[n] += this.fir[k] * inputp[pos - 1] + this.fir[k + 1] * inputp[pos];
-				this.output[n + 1] += this.fir[k + 1] * inputp[pos - 1] - this.fir[k] * inputp[pos];
+				this.output[outpos] += this.fir[k] * inputp[pos - 1] + this.fir[k + 1] * inputp[pos];
+				this.output[outpos + 1] += this.fir[k + 1] * inputp[pos - 1] - this.fir[k] * inputp[pos];
 				pos-=2;
 			}
+			outpos += 2;
 		}
-		this.buffer.copyWithin(0, input.length);
+		this.buffer.copyWithin(0, input.length - 1);
 		return this.output;
 	}
 
@@ -158,20 +160,22 @@ class FIR {
 		if (this.bufferLength != input.length + this.fir.length / 2) {
 			this.buffer = new Float32Array(input.length + this.fir.length / 2); // IQ buffer so 2 bytes...
 			this.bufferLength = input.length + this.fir.length / 2;
-			this.output = new Float32Array(input.length);			
+			this.output = new Float32Array(input.length - this.fir.length / 2);			
 		}
 		this.output.fill(0);
 		this.buffer.set(input, this.fir.length / 2);
+		let outpos = 0;
 		for (let n = this.fir.length / 2; n < input.length; n ++) {
 			let inputp = this.buffer.subarray(n , n + this.fir.length / 2);
 /*			inputp = inputp.reverse();*/
 			let pos = inputp.length - 1;
 			for (let k = 0; k < this.fir.length; k+=2) {
-				this.output[n] += this.fir[k] * inputp[pos];
+				this.output[outpos] += this.fir[k] * inputp[pos];
 				pos--;
 			}
+			outpos++;
 		}
-		this.buffer.copyWithin(0, input.length);
+		this.buffer.copyWithin(0, input.length - 1);
 		return this.output;
 	}
 }

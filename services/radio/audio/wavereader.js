@@ -1,7 +1,7 @@
 let sleep = require('thread-sleep');
 let fs = require('fs');
 let wavreader = require('node-wav');
-let buffer = fs.readFileSync('./data/AM_IQ.wav');
+let buffer = fs.readFileSync('./data/FM_HD_IQ.wav');
 let result = wavreader.decode(buffer);	
 console.log('Reading wav file at rate='+result.sampleRate+' length='+result.channelData[0].length);			
 let interleavedArr = new Float32Array(result.channelData[0].length * 2);			
