@@ -99,9 +99,9 @@ class IQProcessor {
 		this.updateDemodulate = true;
 		switch(modulation) {
 			case 'WFM' : 
-				this.demodulator = new FMDemod(1, {dcblock: false, deemph: false}); 
+				this.demodulator = new FMDemod(1, {dcblock: false, deemph: true}); 
 				this.intermediate = 384000;
-				this.audioLowPassFrequency = 10000;			
+				this.audioLowPassFrequency = 7500;			
 				this.rebuildFilters();	
 				this.updateAudiorate(24000); // 24 khz for WFM
 				break;
@@ -171,7 +171,7 @@ class IQProcessor {
 		this.computeDecimation();
 		this.lpfir = new FIR(this.sampleRate / this.decimationFactor);
 		// compute filter taps length for 60 Db attenuation for fstop = bandwidth + 1/10eme limit and fpass = bandwidth
-		const taps = this.lpfir.computeTapsLength( 40, this.bandwidth + this.bandwidth / 10, this.bandwidth); // 
+		const taps = this.lpfir.computeTapsLength( 50, this.bandwidth + this.bandwidth / 10, this.bandwidth); // 
 		this.window = new Window(taps);
 		this.window.build(Window.blackmanharris);
 		this.lpfir.setWindow(this.window.get());

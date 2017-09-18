@@ -10,7 +10,7 @@ class FMDemod extends Demodulator {
 		this.enableDeemphasis = opts.deemph;
 		this.enableDcblock = opts.dcblock;
 		this.discriminant = null;
-		this.deemph_a = Math.round(1.0/((1.0-Math.exp(-1.0/(256000 * 50e-6)))));
+		this.deemph_a = Math.round(1.0/((1.0-Math.exp(-1.0/(384000 * 50e-6)))));
 		switch(mode) {
 			case 0 : this.discriminant = this.polar_disc_fast; break;
 			case 1 : this.discriminant = this.polar_discriminant; break;

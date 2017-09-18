@@ -5,10 +5,12 @@ let devices = [];
 let deviceChannels = [];
 const node_config = process.env.NODE_ENV || 'development';
 const config = require('config-node')();
+const ADPCM = require('../services/radio/codecs/adpcm');
 const IQProcessor = require('../services/iqprocessor');
 const Audio = require('../services/radio/audio/audio');
 const FFT_SIZE = 4096;
 const iqprocessor = new IQProcessor(FFT_SIZE);
+const adpcm = new ADPCM();
 
 /* Wrapper object */
 const socketRouter = { 
@@ -81,7 +83,8 @@ router.get('/open/:serialNumber', function(req, res, next) {
 							socket.emit('pcm',compressed);
 						}
 					});
-
+					const stateenc = {predicted_value: 0, v_step_index: 0};
+					const statedec = {predicted_value: 0, v_step_index: 0};
 					device.listen((data) => {
 						let floatarr = iqprocessor.convertToFloat(data);						
 						// Process FFT
