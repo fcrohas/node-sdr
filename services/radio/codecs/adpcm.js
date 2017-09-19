@@ -28,13 +28,13 @@ class ADPCM {
       else if (state.v_step_index > 88)
         state.v_step_index = 88;
       let diff = step >> 3;
-      if (state.nibble & 4)
+      if (state.v_nibble & 4)
         diff += step;
-      if (state.nibble & 2)
+      if (state.v_nibble & 2)
         diff += step >> 1;
-      if (state.nibble & 1)
+      if (state.v_nibble & 1)
         diff += step >> 2;
-      if (state.nibble & 8)
+      if (state.v_nibble & 8)
         state.v_predicted_value -= diff;
       else
         state.v_predicted_value += diff;
@@ -113,14 +113,14 @@ class ADPCM {
       for(let i=0; i<size; i+=2)
       {
         // Decode the low-nibble (4-bit) of the byte
-        v_state.v_nibble = input[inp]&0xF;
+        v_state.v_nibble = input[inp] & 0xF;
         // Macro to decode a 4-bit sample with the IMA/DVI ADPCM algorithm
         this.ADPCM_IMA_DECODE_NIBBLE(v_state);
         // Store the result
-        out[i] = v_state.v__predicted_value;
+        out[i] = v_state.v_predicted_value;
 
         // Decode the high-nibble (4-bit) of the byte
-        v_state.v_nibble = (input[inp] >> 4)&0xF;
+        v_state.v_nibble = (input[inp] >> 4) & 0xF;
         // Macro to decode a 4-bit sample with the IMA/DVI ADPCM algorithm
         this.ADPCM_IMA_DECODE_NIBBLE(v_state);
         // Store the result

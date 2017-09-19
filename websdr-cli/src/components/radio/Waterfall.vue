@@ -398,12 +398,11 @@ export default {
     },
     isConnected (value) {
       if (!value) {
-        Websocket.offEvent('fft')
+        Websocket.offFFTFrame('fft')
         return
       }
       // Bind event data
-      Websocket.onEvent('fft', (data) => {
-        const buffer = new Uint8Array(data)
+      Websocket.onFFTFrame(this.bins, (buffer) => {
         // Split received buffer in bins
         for (let i = 0; i < buffer.length; i += this.bins) {
           var line = buffer.subarray(i, i + this.bins)

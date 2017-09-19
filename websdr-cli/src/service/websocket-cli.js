@@ -16,7 +16,7 @@ class WebsocketClient {
     this.worker.addEventListener('message', (event) => {
       this.onMessage(event)
     })
-    this.callback = {'connect': [], 'disconnect': [], 'send': [], 'emit': [], 'on': [], 'once': [], 'onAudioFrame': []}
+    this.callback = {'connect': [], 'disconnect': [], 'send': [], 'emit': [], 'on': [], 'once': [], 'onAudioFrame': [], 'onFFTFrame': []}
   }
 
   connect (serial) {
@@ -77,7 +77,7 @@ class WebsocketClient {
       }
       // If not a callabck type
       // Simply clear array callback
-      if ((type !== 'on') && (type !== 'onAudioFrame')) {
+      if ((type !== 'on') && (type !== 'onAudioFrame') && (type !== 'onFFTFrame')) {
         this.callback[type][name][id] = null
       }
     }
@@ -98,6 +98,18 @@ class WebsocketClient {
   offAudioFrame () {
     this.worker.postMessage({cmd: 'offAudioFrame'})
     this.callback['onAudioFrame']['onAudioFrame'] = []
+  }
+
+  onFFTFrame (fftSize, callback) {
+    // Register the callback
+    const id = this.register('onFFTFrame', 'onFFTFrame', callback)
+    // Start streaming
+    this.worker.postMessage({cmd: 'onFFTFrame', params: {bins: fftSize, callback: id}})
+  }
+
+  offFFTFrame () {
+    this.worker.postMessage({cmd: 'offFFTFrame'})
+    this.callback['onFFTFrame']['onFFTFrame'] = []
   }
 }
 
