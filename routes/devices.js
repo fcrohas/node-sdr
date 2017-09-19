@@ -90,7 +90,25 @@ router.get('/open/:serialNumber', function(req, res, next) {
 						// Process FFT
 						var fftOut = iqprocessor.doFFT(floatarr);
 						if (fftOut != null) {
-							socket.emit('fft',Buffer.from(fftOut.buffer));
+							// fftOut to Int16Array cast using buffer
+							const int16Array = new Int16Array(fftOut.buffer);
+							// prepare output after compression will be resized after
+							const out8Array = new Uint8Array(fftOut.length / 4);
+							// prepare state
+							const state = { predicted_value:0 , step_index:0 };
+							// Encode
+							const length = adpcm.adpcm_ima_encode(out8Array, int16Array, int16Array.length, state);
+							console.log('output after compression length=',length, 'original length=',fftOut.length);
+							// decode
+/*							const decode16Array = new Int16Array(length * 2);
+							state.predicted_value = 0;
+							state.step_index = 0;
+							adpcm.adpcm_ima_decode( decode16Array, out8Array.subarray(0,length), length, state);
+							const output = new Uint8Array(decode16Array.buffer);
+							console.log('decoded array length=', decode16Array.length, "uncompressed length=", output.length);							
+*/							
+							socket.emit('fft',Buffer.from(out8Array.buffer));
+							//socket.emit('fft',Buffer.from(fftOut.buffer));
 						}
 						// Demodulate signal
 						if (iqprocessor.canDemodulate()) {

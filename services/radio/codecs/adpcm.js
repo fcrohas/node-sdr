@@ -176,8 +176,8 @@ class ADPCM {
       // Restore the predicted value and step index
       state.predicted_value = v_state.v_predicted_value;
       state.step_index = v_state.v_step_index;
+      return pout;      
     }    
-
 }
 
 module.exports = ADPCM;
