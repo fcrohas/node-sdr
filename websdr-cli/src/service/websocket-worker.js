@@ -118,14 +118,12 @@ addEventListener('message', (event) => {
         const size = data.params.bins
         websocket.onEvent('fft', (data) => {
             // get compressed data
-            const compressedData = new Uint8Array(Buffer.from(data))
+            const compressedData = new Uint8Array(data)
             // x4 for real array size
-            const decodedData = new Int16Array(compressedData.length * 2)            
+            const decompress = new Uint8Array(compressedData.length * 2)            
             // do decompress
             const state = { predicted_value:0 , step_index:0 }            
-            adpcm.adpcm_ima_decode(decodedData, compressedData, compressedData.length, state)
-            const decompress = new Uint8Array(decodedData.buffer);
-            //console.log('compressed array length=',compressedData.length, 'int16array length=', decodedData.length,'decompress length=',decompress.length);
+            adpcm.adpcm_ima_decode(decompress, compressedData, compressedData.length, state)
             // notify 
             postMessage({cmd: 'onFFTFrame', name: 'onFFTFrame', ack: localCallback, message: decompress})
         })

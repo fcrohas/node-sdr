@@ -12,7 +12,7 @@ class Audio {
 		// 10 ms frame_size
 		this.frame_size = this.audiorate / 100; 
 		// 5s buffer ? 
-		this.buffer = new Float32Array(this.audiorate * 2);
+		this.buffer = new Float32Array(720);
 		this.bufferOffset = 0;
 		// Callabck events
 		this.callback = [];

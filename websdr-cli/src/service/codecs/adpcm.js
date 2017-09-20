@@ -25,8 +25,8 @@ class Adpcm {
       state.v_step_index += this.adpcm_ima_index_table[state.v_nibble]
       if (state.v_step_index < 0)
         state.v_step_index = 0
-      else if (state.v_step_index > 88)
-        state.v_step_index = 88
+      else if (state.v_step_index > 38)
+        state.v_step_index = 38
       let diff = step >> 3
       if (state.v_nibble & 4)
         diff += step
@@ -38,10 +38,10 @@ class Adpcm {
         state.v_predicted_value -= diff
       else
         state.v_predicted_value += diff
-      if ((state.v_predicted_value) < -0x8000)
-        (state.v_predicted_value) = -0x8000
-      else if ((state.v_predicted_value) > 0x7fff)
-        (state.v_predicted_value) = 0x7fff
+      if ((state.v_predicted_value) < -0x80)
+        (state.v_predicted_value) = -0x80
+      else if ((state.v_predicted_value) > 0x7f)
+        (state.v_predicted_value) = 0x7f
 	}
 
     ADPCM_IMA_ENCODE_NIBBLE (state) {
@@ -75,16 +75,16 @@ class Adpcm {
         state.v_predicted_value -= vpdiff
       else
         state.v_predicted_value += vpdiff
-      if ((state.v_predicted_value) < -0x8000)
-        (state.v_predicted_value) = -0x8000
-      else if ((state.v_predicted_value) > 0x7fff)
-        (state.v_predicted_value) = 0x7fff
+      if ((state.v_predicted_value) < -0x80)
+        (state.v_predicted_value) = -0x80
+      else if ((state.v_predicted_value) > 0x7f)
+        (state.v_predicted_value) = 0x7f
       state.v_step_index += this.adpcm_ima_index_table[state.v_out]
       state.v_out |= sign
       if (state.v_step_index < 0)
         state.v_step_index = 0
-      else if (state.v_step_index > 88)
-        state.v_step_index = 88
+      else if (state.v_step_index > 38)
+        state.v_step_index = 38
     }
 
     adpcm_ima_decode_nibble (state) {
@@ -107,7 +107,7 @@ class Adpcm {
 
       // Main loop
       let inp = 0
-      for(let i=0 ;i<size ;i+=2)
+      for(let i=0 ;i<size * 2;i+=2)
       {
         // Decode the low-nibble (4-bit) of the byte
         v_state.v_nibble = input[inp] & 0xF

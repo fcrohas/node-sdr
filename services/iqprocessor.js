@@ -252,7 +252,7 @@ class IQProcessor {
 		if (this.updateFFT) {
 			return null;
 		}
-		let average = 32;
+		let average = 64;
 		var fftOut = new Float32Array(floatarr.length);		
 		var fftmean = new Uint8Array(floatarr.length / 2 / average);
 		for (var k = 0; k < floatarr.length; k += this.size * 2) {
@@ -290,7 +290,7 @@ class IQProcessor {
 				this.fftResult[i] = Math.sqrt(this.fftResult[i] / average);
 				const log = 20 * Math.log10(this.fftResult[i]);
 				// switch result here
-				fftmean[j] = log + 128;
+				fftmean[j] = log + 64;
 				//min = Math.min(log, min);
 				//max = Math.max(log, max);
 				j++;
