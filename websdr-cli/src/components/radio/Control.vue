@@ -3,30 +3,33 @@
     <v-card-text class="full-size">
       <v-container fluid class="full-size">
         <v-layout row wrap class="display full-size">
-          <v-flex xs12 class="full-size">
-            <v-flex xs11>
-              <span>
+          <v-flex xs12 class="tuner-group full-size">
+              <div class="tuner-group">
                 <span class="frequency">{{tunedFrequency | frequency}}</span>
-              </span>
+              </div>
+              <p class="text-xs-center">Center frequency</p>
               <v-btn class="tuner-btn" flat small @click="changeCenterFrequency(-500000)">-</v-btn>
               <v-btn class="tuner-btn" flat small @click="changeCenterFrequency(500000)">+</v-btn>
-            </v-flex>
-            <v-flex xs1>
-            </v-flex>
           </v-flex>
           <v-flex xs12 class="full-size tuner-group">
-            <v-btn class="tuner-btn" flat small value="am" @click="changeModulation('AM')">AM</v-btn>
-            <v-btn class="tuner-btn" flat small value="fm" @click="changeModulation('FM')">FM</v-btn>
-            <v-btn class="tuner-btn" flat small value="wfm" @click="changeModulation('WFM')">WFM</v-btn>
-            <v-btn class="tuner-btn" flat small value="usb" @click="changeModulation('USB')">USB</v-btn>
-            <v-btn class="tuner-btn" flat small value="lsb" @click="changeModulation('LSB')">LSB</v-btn>
+            <p>Modulation</p>
+            <v-btn-toggle mandatory dark :input-value="modulationType" @change="changeModulation">
+                <v-btn class="tuner-btn" flat small value="AM">AM</v-btn>
+                <v-btn class="tuner-btn" flat small value="FM">FM</v-btn>
+                <v-btn class="tuner-btn" flat small value="WFM">WFM</v-btn>
+                <v-btn class="tuner-btn" flat small value="USB">USB</v-btn>
+                <v-btn class="tuner-btn" flat small value="LSB">LSB</v-btn>
+            </v-btn-toggle>
           </v-flex>
           <v-flex xs12 class="full-size tuner-group">
-            <v-btn class="tuner-btn" flat small value="500" @click="changeFrequencyStep(500)">500 Hz</v-btn>
-            <v-btn class="tuner-btn" flat small value="1000" @click="changeFrequencyStep(1000)">1 Khz</v-btn>
-            <v-btn class="tuner-btn" flat small value="5000" @click="changeFrequencyStep(5000)">5 Khz</v-btn>
-            <v-btn class="tuner-btn" flat small value="12500" @click="changeFrequencyStep(12500)">12.5 Khz</v-btn>
-            <v-btn class="tuner-btn" flat small value="50000" @click="changeFrequencyStep(50000)">50 Khz</v-btn>
+            <p>Frequency step</p>
+            <v-btn-toggle mandatory dark :input-value="stepFrequency" @change="changeFrequencyStep">
+                <v-btn class="tuner-btn" flat small value="500">500</v-btn>
+                <v-btn class="tuner-btn" flat small value="1000">1 K</v-btn>
+                <v-btn class="tuner-btn" flat small value="5000">5 K</v-btn>
+                <v-btn class="tuner-btn" flat small value="12500">12.5 K</v-btn>
+                <v-btn class="tuner-btn" flat small value="50000">50 K</v-btn>
+            </v-btn-toggle>
           </v-flex>
           <v-flex xs12 class="full-size">
             RF
@@ -54,14 +57,14 @@ export default {
 
   name: 'Control',
   components: { vueSlider },
-  props: {
-  },
   computed: {
     ...mapGetters({
       tunedFrequency: 'tunedFrequency',
       currentBandwidth: 'currentBandwidth',
       centerFrequency: 'centerFrequency',
-      capabilities: 'capabilities'
+      capabilities: 'capabilities',
+      modulationType: 'modulationType',
+      stepFrequency: 'stepFrequency'
     })
   },
   methods: {
@@ -86,7 +89,7 @@ export default {
   filters: {
     frequency: function (value) {
       console.log(value)
-      return value.toString().replace(/(.{3})/g, '$1.')
+      return value.toString().replace(/(.{3})(?=.)/g, '$1.')
     }
   },
   data () {
@@ -120,13 +123,13 @@ export default {
   height: 100%;
   padding: 0px;
   background: black;
+  color:white;
 }
 .frequency {
     font-family: 'digital-clock-font';
     color: white;
     font-size: 48px;
-    font-weight: 1;
-    border: 2px solid white;
+    font-weight: 0.5;
 }
 .tunerFrequency {
     position: absolute;
@@ -136,7 +139,6 @@ export default {
     color: lightgray;
 }
 .tuner-btn {
-  border: white 1px solid;
   color: white;
   width: 50px;
 }

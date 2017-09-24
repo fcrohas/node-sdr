@@ -252,7 +252,7 @@ class IQProcessor {
 		if (this.updateFFT) {
 			return null;
 		}
-		let average = 16;
+		let average = 32;
 		var fftOut = new Float32Array(floatarr.length);		
 		var fftmean = new Uint8Array(floatarr.length / 2 / average);
 		for (var k = 0; k < floatarr.length; k += this.size * 2) {
