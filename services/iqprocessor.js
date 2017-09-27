@@ -33,11 +33,11 @@ class IQProcessor {
 
 	updateAudiorate(audiorate) {
 		this.audiorate = audiorate;
-		this.audiofilter = new FIR(this.audiorate/2);
+		this.audiofilter = new FIR(this.audiorate);
 		// compute filter taps length for 60 Db attenuation for fstop = audiorate + 3000Khz limit and fpass = adio pass
-		const taps = this.audiofilter.computeTapsLength( 30, this.audioLowPassFrequency + 2500, this.audioLowPassFrequency);
+		const taps = this.audiofilter.computeTapsLength( 30, this.audioLowPassFrequency, this.audioLowPassFrequency - 800);
 		this.audiowindow = new Window(taps);
-		this.audiowindow.build(Window.blackmanharris);
+		this.audiowindow.build(Window.hann);
 		this.audiofilter.setWindow(this.audiowindow.get());
 		this.audiofilter.buildLowpass( this.audioLowPassFrequency, taps);
 		//this.audiofilter.buildBandpass( 6050, 11500, taps);
@@ -99,9 +99,9 @@ class IQProcessor {
 		this.updateDemodulate = true;
 		switch(modulation) {
 			case 'WFM' : 
-				this.demodulator = new FMDemod(1, {dcblock: false, deemph: true}); 
+				this.demodulator = new FMDemod(1, {dcblock: false, deemph: false}); 
 				this.intermediate = 384000;
-				this.audioLowPassFrequency = 7500;			
+				this.audioLowPassFrequency = 10000;			
 				this.rebuildFilters();	
 				this.updateAudiorate(24000); // 24 khz for WFM
 				break;
@@ -115,7 +115,7 @@ class IQProcessor {
 			case 'AM' : 
 				this.demodulator = new AMDemod(0);
 				this.intermediate = 96000;
-				this.audioLowPassFrequency = 2500;				
+				this.audioLowPassFrequency = 4500;				
 				this.rebuildFilters();
 				this.updateAudiorate(24000); // 24 khz for AM
 				break;
@@ -171,9 +171,9 @@ class IQProcessor {
 		this.computeDecimation();
 		this.lpfir = new FIR(this.sampleRate / this.decimationFactor);
 		// compute filter taps length for 60 Db attenuation for fstop = bandwidth + 1/10eme limit and fpass = bandwidth
-		const taps = this.lpfir.computeTapsLength( 50, this.bandwidth + this.bandwidth / 10, this.bandwidth); // 
+		const taps = this.lpfir.computeTapsLength( 50, this.bandwidth, this.bandwidth - this.bandwidth / 10); // 
 		this.window = new Window(taps);
-		this.window.build(Window.blackmanharris);
+		this.window.build(Window.hamming);
 		this.lpfir.setWindow(this.window.get());
 		this.lpfir.buildLowpass( this.bandwidth, taps);
 		console.log('Rebuild for bandwidth=' + this.bandwidth);
@@ -220,7 +220,7 @@ class IQProcessor {
 				this.xlatArr[i] = floatarr[i] * this.xlat.cosine - floatarr[i + 1] * this.xlat.sine;
 				this.xlatArr[i + 1] = floatarr[i] * this.xlat.sine + floatarr[i + 1] * this.xlat.cosine;
 				// compute new cos/sin
-				var newSine = this.xlat.cosine * this.xlat.deltaSine + this.xlat.sine * this.xlat.deltaCosine;
+				const newSine = this.xlat.cosine * this.xlat.deltaSine + this.xlat.sine * this.xlat.deltaCosine;
 				this.xlat.cosine = this.xlat.cosine * this.xlat.deltaCosine - this.xlat.sine * this.xlat.deltaSine;
 				this.xlat.sine = newSine;
 			}

@@ -1,35 +1,47 @@
 <template>
-      <v-container fluid grid-list-sm class="full-size">
-        <v-layout row wrap class="scrollbox">
-            <v-flex xs12 v-for="(item,index) in capabilities" :key="item.name">
-                    <v-radio-group v-if="item.type==='radio'" :input-value="item.value" dark>
-                        <v-radio v-for="option in item.values" :label="option" :value="option" :key="option" @change="changeSetting(item, $event)">
-                        </v-radio>
-                    </v-radio-group>
-                    <v-switch dark v-if="item.type==='switch'" :label="item.name" :input-value="item.value" @change="changeSetting(item, $event)">
-                    </v-switch>
-                    <div v-if="item.type==='choice'">
-                        <p>{{item.name}}</p>
-                        <v-select dark
-                          v-bind:items="item.values"
-                          v-model="item.value"
-                          :label="item.name"
-                          single-line
-                          auto
-                          prepend-icon="map"
-                          @change="changeSetting(item, $event)"
-                          hide-details
-                        ></v-select>
-                    </div>
-                    <span v-if="item.type==='range'">
-                        <p>{{item.name}}</p>
-                        <vue-slider dark v-model="item.value"
-                            :min="item.min" :max="item.max" :interval="item.interval" 
-                            :width="'auto'" :tooltip="'hover'" tooltip-dir="'right'" @callback="changeSetting(item, $event)" :lazy="true"></vue-slider>
-                    </span>
-            </v-flex>
-        </v-layout>
-    </v-container>
+ <v-container fluid grid-list-sm class="full-size">
+  <v-tabs dark class="full-size">
+        <v-tabs-bar class="gray">
+            <v-tabs-slider class="white"></v-tabs-slider>
+            <v-tabs-item v-for="(items, key, index) in capabilitiesByCategory" :key="index" :href="'#tab-' + index">
+            {{ key }}
+            </v-tabs-item>
+        </v-tabs-bar>
+        <v-tabs-items>
+          <v-tabs-content v-for="(items, key, index) in capabilitiesByCategory" :key="index" :id="'tab-' + index">
+            <v-layout row wrap class="scrollbox">
+                <v-flex xs12 v-for="item in items" :key="item.name">
+                        <v-radio-group v-if="item.type==='radio'" :input-value="item.value" dark>
+                            <v-radio v-for="option in item.values" :label="option" :value="option" :key="option" @change="changeSetting(item, $event)">
+                            </v-radio>
+                        </v-radio-group>
+                        <v-switch dark v-if="item.type==='switch'" :label="item.name" :input-value="item.value" @change="changeSetting(item, $event)">
+                        </v-switch>
+                        <div v-if="item.type==='choice'">
+                            <p>{{item.name}}</p>
+                            <v-select dark
+                              v-bind:items="item.values"
+                              v-model="item.value"
+                              :label="item.name"
+                              single-line
+                              auto
+                              prepend-icon="map"
+                              @change="changeSetting(item, $event)"
+                              hide-details
+                            ></v-select>
+                        </div>
+                        <span v-if="item.type==='range'">
+                            <p>{{item.name}}</p>
+                            <vue-slider dark v-model="item.value"
+                                :min="item.min" :max="item.max" :interval="item.interval" 
+                                :width="'auto'" :tooltip="'hover'" tooltip-dir="'right'" @callback="changeSetting(item, $event)" :lazy="true"></vue-slider>
+                        </span>
+                </v-flex>
+            </v-layout>
+          </v-tabs-content>
+        </v-tabs-items>
+    </v-tabs>
+  </v-container>
  </template>
 
 <script>
@@ -59,11 +71,22 @@ export default {
     // On connect retrieve capabilities for additional settings
     isConnected () {
       this.getCapabilities()
+    },
+    capabilities () {
+      for (let i = 0; i < this.capabilities.length; i++) {
+        const item = this.capabilities[i]
+        if (this.capabilitiesByCategory[item.category] === undefined) {
+          this.capabilitiesByCategory[item.category] = []
+        }
+        this.capabilitiesByCategory[item.category].push(item)
+      }
+      this.$forceUpdate()
     }
   },
   data () {
     return {
-      serialNumber: ''
+      serialNumber: '',
+      capabilitiesByCategory: {}
     }
   },
   mounted () {
@@ -82,7 +105,7 @@ export default {
 }
 .scrollbox {
   width: 100%;
-  height: 500px;
+  height: 400px;
   overflow: auto;
 
 }

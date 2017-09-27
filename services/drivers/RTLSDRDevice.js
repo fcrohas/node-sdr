@@ -96,19 +96,22 @@ class RTLSDRDevice extends Device {
 	getCapabilities() {
 		return [
 		{
-			type: 'list',
+			type: 'choice',
+			category: 'General',
 			name: 'tunerGain',
 			values: this.device.validGains,
 			default: 241
 		},
 		{
 			type: 'range',
+			category: 'General', 
 			name: 'sampleRate',
 			values: '900001-3200000',
 			default: 2048000
 		},
 		{
 			type: 'range',
+			category: 'General',
 			name: 'frequency',
 			values: this.tuningRange
 

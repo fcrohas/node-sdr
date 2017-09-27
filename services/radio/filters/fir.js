@@ -32,7 +32,7 @@ class FIR {
 	            this.fir[i + 1] = this.fir[i + 1] * this.window[j];
 	        }
 	        i = i + 2;
-	    }		
+	    }
 	}
 
 	buildHighpass(frequencyCut, order) {

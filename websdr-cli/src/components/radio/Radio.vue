@@ -8,8 +8,8 @@
             <waterfall class="full-size"></waterfall>
         </v-flex>
         <v-flex xs12 md2 class="full-size">
-            <audio-stream></audio-stream>
-            <options></options>            
+            <audio-stream class="audio-view"></audio-stream>
+            <options class="options-view"></options>            
         </v-flex>
     </v-layout>
   </v-container>
@@ -47,6 +47,12 @@ export default {
 <style lang="css" scoped>
 .full-size {
   width: 100%;
-/*  height: 100%;*/
+  height: 100%;
+}
+.audio-view {
+    height: 40%;
+}
+.options-view {
+    height: 60%;
 }
 </style>

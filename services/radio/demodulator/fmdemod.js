@@ -99,7 +99,7 @@ class FMDemod extends Demodulator {
 		let pr = this.pre_r;
 		let pj = this.pre_j;
 		for (let i = 0; i < buffer.length; i+=2) {
-			this.result[i/2] = this.discriminant(buffer[i], buffer[i+1], pr, pj);
+			this.result[i/2] = this.discriminant(buffer[i], buffer[i+1], pr, pj) * 0.95;
 			pr = buffer[i];
 			pj = buffer[i + 1];
 		}

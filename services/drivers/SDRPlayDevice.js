@@ -12,8 +12,8 @@ class SDRPlayDevice extends Device {
 		this.bufferData = new Int16Array(this.ASYNC_BUF_NUMBER * this.ASYNC_BUF_SIZE);
 		this.bufferOffset = 0;
 		this.started = false;
-		this.gainReduction = 58;
-		this.LNAState = 4;
+		this.gainReduction = 48;
+		this.LNAState = 2;
 		this.gRdBsystem = 28;
 		this.DCenable = 0;
 		this.IQenable = 0;
@@ -134,12 +134,12 @@ class SDRPlayDevice extends Device {
 
 	getCapabilities() {
 		return [
-		{ type: 'range', name: 'gainReduction', min: 20, max: 59, interval: 1, value: 58 },
-		{ type: 'range', name: 'lnaState', min: 0, max: 8, interval: 1, value: 3 },
-		{ type: 'choice', name: 'sampleRate', values: [192000, 384000, 768000, 1536000, 3072000, 6000000, 7000000, 8000000], default: 2048000 },
-		{ type: 'range', name: 'frequency', values: this.tuningRange },
-		{ type: 'radio', name: 'antenna', values: ['Port A', 'Port B', 'HI-Z'], value: 'Port A' },
-		{ type: 'choice', name: 'filter', values: [this.driver.Bw_MHzT.mir_sdr_BW_0_200, 
+		{ type: 'range', category: 'gain', name: 'gainReduction', min: 20, max: 59, interval: 1, value: 58 },
+		{ type: 'range', category: 'gain', name: 'lnaState', min: 0, max: 8, interval: 1, value: 3 },
+		{ type: 'choice', category: 'frequency', name: 'sampleRate', values: [192000, 384000, 768000, 1536000, 3072000, 6000000, 7000000, 8000000], default: 2048000 },
+		{ type: 'range', category: 'frequency', name: 'frequency', values: this.tuningRange },
+		{ type: 'radio', category: 'RSP2', name: 'antenna', values: ['Port A', 'Port B', 'HI-Z'], value: 'Port A' },
+		{ type: 'choice', category: 'frequency', name: 'filter', values: [this.driver.Bw_MHzT.mir_sdr_BW_0_200, 
 												   this.driver.Bw_MHzT.mir_sdr_BW_0_300, 
 												   this.driver.Bw_MHzT.mir_sdr_BW_0_600, 
 												   this.driver.Bw_MHzT.mir_sdr_BW_1_536, 
@@ -147,20 +147,20 @@ class SDRPlayDevice extends Device {
 												   this.driver.Bw_MHzT.mir_sdr_BW_6_000,
 												   this.driver.Bw_MHzT.mir_sdr_BW_7_000,
 												   this.driver.Bw_MHzT.mir_sdr_BW_8_000], value: this.driver.Bw_MHzT.mir_sdr_BW_1_536 },
-		{ type: 'choice', name: 'localMode', values: [this.driver.LoModeT.mir_sdr_LO_Undefined,
+		{ type: 'choice', category: 'frequency', name: 'localMode', values: [this.driver.LoModeT.mir_sdr_LO_Undefined,
 													  this.driver.LoModeT.mir_sdr_LO_Auto,
 													  this.driver.LoModeT.mir_sdr_LO_120MHz,
 													  this.driver.LoModeT.mir_sdr_LO_144MHz,
 													  this.driver.LoModeT.mir_sdr_LO_168MHz], value: this.driver.LoModeT.mir_sdr_LO_Auto },
-		{ type: 'choice', name: 'ifMode', values: [this.driver.If_kHzT.mir_sdr_IF_Zero,
+		{ type: 'choice', category: 'frequency', name: 'ifMode', values: [this.driver.If_kHzT.mir_sdr_IF_Zero,
 												   this.driver.If_kHzT.mir_sdr_IF_0_450,
 												   this.driver.If_kHzT.mir_sdr_IF_1_620,
 												   this.driver.If_kHzT.mir_sdr_IF_2_048], value: this.driver.If_kHzT.mir_sdr_IF_Zero},
-		{ type: 'switch', name: 'biast', values: [0, 1], value: 0},
-		{ type: 'switch', name: 'notch', values: [0, 1], value: 0},
-		{ type: 'switch', name: 'dcoffset', values: [0, 1], value: 0},
-		{ type: 'switch', name: 'iqimbalance', values: [0, 1], value: 0},
-		{ type: 'choice', name: 'agccontrol', values: [this.driver.AgcControlT.mir_sdr_AGC_DISABLE, 
+		{ type: 'switch', category: 'RSP2', name: 'biast', values: [0, 1], value: 0},
+		{ type: 'switch', category: 'RSP2', name: 'notch', values: [0, 1], value: 0},
+		{ type: 'switch', category: 'RSP2', name: 'dcoffset', values: [0, 1], value: 0},
+		{ type: 'switch', category: 'RSP2', name: 'iqimbalance', values: [0, 1], value: 0},
+		{ type: 'choice', category: 'gain', name: 'agccontrol', values: [this.driver.AgcControlT.mir_sdr_AGC_DISABLE, 
 												this.driver.AgcControlT.mir_sdr_AGC_100HZ, 
 												this.driver.AgcControlT.mir_sdr_AGC_50HZ, 
 												this.driver.AgcControlT.mir_sdr_AGC_5HZ], value: this.driver.AgcControlT.mir_sdr_AGC_DISABLE}];
