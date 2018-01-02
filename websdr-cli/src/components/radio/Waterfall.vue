@@ -396,6 +396,10 @@ export default {
     tunedFrequency (value) {
       this.drawTunedFrequency(this.overlayCtx)
     },
+    sampleRate (value) {
+      this.drawOverlay(this.overlayCtx, this.overlayPos)
+      this.drawWaterfall(this.spectrumCtx, this.fftdata)
+    },
     isConnected (value) {
       if (!value) {
         Websocket.offFFTFrame('fft')

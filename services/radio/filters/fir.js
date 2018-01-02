@@ -6,6 +6,9 @@ class FIR {
 		this.bufferLength = 0;
 		this.buffer = new Float32Array();
 		this.output = new Float32Array();
+		this.RegI = new Float32Array();
+		this.RegQ = new Float32Array();
+		this.NumTaps = 0;
 	}
 
 	setWindow(window) {
@@ -14,6 +17,7 @@ class FIR {
 
 	buildLowpass(frequencyCut, order) {
 		const wc = 2 * Math.PI * frequencyCut / this.sampleRate;
+		this.NumTaps = order;
 		const N = order;
 		const M = order - 1;
 		this.fir = new Float32Array( N * 2);
@@ -37,6 +41,7 @@ class FIR {
 
 	buildHighpass(frequencyCut, order) {
 		const wc = 2 * Math.PI * frequencyCut / this.sampleRate;
+		this.NumTaps = order;
 		const N = order;
 		const M = order - 1;
 		this.fir = new Float32Array( N * 2);		
@@ -62,7 +67,7 @@ class FIR {
 	buildBandpass(centerFrequency, bandwidth, order) {
 	    const wc1 = (2.0 * Math.PI * (centerFrequency-bandwidth/2.0)) / this.sampleRate;
 	    const wc2 = (2.0 * Math.PI * (centerFrequency+bandwidth/2.0)) / this.sampleRate;
-
+		this.NumTaps = order;
 		const N = order;
 		const M = order - 1;
 		this.fir = new Float32Array( N * 2);
@@ -88,7 +93,7 @@ class FIR {
 	buildStopband(centerFrequency, bandwidth, order) {
 	    const wc1 = (2.0 * Math.PI * (centerFrequency-bandwidth/2.0)) / this.sampleRate;
 	    const wc2 = (2.0 * Math.PI * (centerFrequency+bandwidth/2.0)) / this.sampleRate;
-
+		this.NumTaps = order;
 		const N = order;
 		const M = order - 1;
 		this.fir = new Float32Array( N * 2);
@@ -112,6 +117,7 @@ class FIR {
 	}
 
 	buildAllpass(order) {
+		this.NumTaps = order;		
 		const N = order;
 		this.fir = new Float32Array(N * 2);
 		for (let i = 0, j = 0; j < N ; j++) {
@@ -126,7 +132,7 @@ class FIR {
 	}
 
 	computeTapsLength(maxAttenuationDb, fStop, fPass) {
-		const transitionBand = (fStop - fPass) / this.sampleRate;
+		const transitionBand = Math.abs(fStop - fPass) / this.sampleRate;
 		let taps = Math.round(maxAttenuationDb / (22 * transitionBand));
 		console.log('Compute '+((taps%2) ? taps : taps+1)+' taps for '+maxAttenuationDb+' dB with fStop='+fStop+' fPass='+fPass+' fs='+this.sampleRate);		
 		return (taps%2) ? taps : taps+1;
@@ -177,6 +183,97 @@ class FIR {
 		}
 		this.buffer.copyWithin(0, input.length - 1);
 		return this.output;
+	}
+
+	doFilterIQ(input)
+	{
+	  let Top = 0;
+	  let n = 0;
+	  if (this.NumTaps != this.RegI.length) {
+	  	this.RegI = new Float32Array(this.NumTaps);
+	  	this.RegQ = new Float32Array(this.NumTaps);
+	  }
+
+	  if (input.length != this.output.length) {
+	  	this.output = new Float32Array(input.length);
+	  }
+	  this.output.fill(0);
+
+	  for(let j=0; j < this.NumTaps; j++) {
+	  	this.RegI[j] = 0.0;
+	  	this.RegQ[j] = 0.0;
+	  }
+
+	  for(let j=0; j < input.length + this.NumTaps * 2; j += 2)
+	   {
+	    this.RegI[Top] = input[j];
+	    this.RegQ[Top] = input[j + 1];
+	    n = 0;
+
+	    // The FirCoeff index increases while the Reg index decreases.
+	    for(let k= Top; k >= 0; k--)
+	    {
+	      this.output[j] += this.fir[n] * this.RegI[k];
+	      this.output[j + 1] += this.fir[n + 1] * this.RegQ[k];
+	      n += 2;
+	    }
+	    for(let k= this.NumTaps - 1; k > Top; k--)
+	    {
+	      this.output[j] += this.fir[n] * this.RegI[k];
+	      this.output[j + 1] += this.fir[n + 1] * this.RegQ[k];
+	      n += 2;
+	    }
+
+	    Top++;
+
+	    if(Top >= this.NumTaps) {
+	    	Top = 0;
+	    }
+	   }
+	   return this.output;
+	}
+
+	doFilterReal2(input)
+	{
+	  let Top = 0;
+	  let n = 0;
+	  if (this.NumTaps != this.RegI.length) {
+	  	this.RegI = new Float32Array(this.NumTaps);
+	  }
+
+	  if (input.length != this.output.length) {
+	  	this.output = new Float32Array(input.length);
+	  }
+	  this.output.fill(0);
+
+	  for(let j=0; j < this.NumTaps; j++) {
+	  	this.RegI[j] = 0.0;
+	  }
+
+	  for(let j=0; j < input.length + this.NumTaps; j ++)
+	   {
+	    this.RegI[Top] = input[j];
+	    n = 0;
+
+	    // The FirCoeff index increases while the Reg index decreases.
+	    for(let k= Top; k >= 0; k--)
+	    {
+	      this.output[j] += this.fir[n] * this.RegI[k];
+	      n++;
+	    }
+	    for(let k= this.NumTaps - 1; k > Top; k--)
+	    {
+	      this.output[j] += this.fir[n] * this.RegI[k];
+	      n++;
+	    }
+
+	    Top++;
+
+	    if(Top >= this.NumTaps) {
+	    	Top = 0;
+	    }
+	   }
+	   return this.output;
 	}
 }
 

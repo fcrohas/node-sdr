@@ -10,7 +10,8 @@ class FMDemod extends Demodulator {
 		this.enableDeemphasis = opts.deemph;
 		this.enableDcblock = opts.dcblock;
 		this.discriminant = null;
-		this.deemph_a = Math.round(1.0/((1.0-Math.exp(-1.0/(384000 * 50e-6)))));
+		//this.deemph_a = 1.0/((1.0-Math.exp(-1.0/(384000 * 50e-6))));
+		this.deemph_a = Math.exp(-2 * Math.PI * 384000 * 75e-6);
 		switch(mode) {
 			case 0 : this.discriminant = this.polar_disc_fast; break;
 			case 1 : this.discriminant = this.polar_discriminant; break;
@@ -82,13 +83,16 @@ class FMDemod extends Demodulator {
 		// de-emph IIR
 		// avg = avg * (1 - alpha) + sample * alpha;
 		for (let i = 0; i < pcm.length; i++) {
-			d = pcm[i] - this.avg;
-			if (d > 0) {
-				this.avg = this.avg + (d + this.deemph_a / 2.0) / this.deemph_a;
-			} else {
-				this.avg = this.avg + (d - this.deemph_a / 2.0) / this.deemph_a;
+			if (i > 0) {
+				pcm[i] = pcm[i] + this.deemph_a * pcm[i - 1];
 			}
-			pcm[i] = this.avg;
+			//this.avg = this.avg * (1 - this.deemph_a) + pcm[i] * this.deemph_a;
+			// if (d > 0) {
+			// 	this.avg = this.avg + (d + this.deemph_a / 2.0) / this.deemph_a;
+			// } else {
+			// 	this.avg = this.avg + (d - this.deemph_a / 2.0) / this.deemph_a;
+			// }
+			//pcm[i] = this.avg;
 		}
 		return pcm;
 	}
@@ -99,7 +103,7 @@ class FMDemod extends Demodulator {
 		let pr = this.pre_r;
 		let pj = this.pre_j;
 		for (let i = 0; i < buffer.length; i+=2) {
-			this.result[i/2] = this.discriminant(buffer[i], buffer[i+1], pr, pj) * 0.95;
+			this.result[i/2] = this.discriminant(buffer[i], buffer[i+1], pr, pj);
 			pr = buffer[i];
 			pj = buffer[i + 1];
 		}
@@ -108,7 +112,7 @@ class FMDemod extends Demodulator {
 		this.pre_j = pj;
 
 		if (this.enableDcblock) {
-			this.result = this.dc_block_filter(this.result); 
+			this.result = this.dc_block_filter2(this.result); 
 		}
 		if (this.enableDeemphasis) {
 			this.result = this.deemph_filter(this.result);

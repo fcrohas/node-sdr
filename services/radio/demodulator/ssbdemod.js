@@ -16,9 +16,9 @@ class SSBDemod extends Demodulator  {
 		
 		for (let i = 0; i < buffer.length; i+=2) {
 			if (this.mode) {
-				this.result[i/2] = buffer[i] + buffer[i+1];
+				this.result[i/2] = buffer[i] + buffer[i+1] * 0.95;
 			} else {
-				this.result[i/2] = buffer[i] - buffer[i+1];
+				this.result[i/2] = buffer[i] - buffer[i+1] * 0.95;
 			}
 		}
 		return this.result;

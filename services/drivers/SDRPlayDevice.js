@@ -12,8 +12,8 @@ class SDRPlayDevice extends Device {
 		this.bufferData = new Int16Array(this.ASYNC_BUF_NUMBER * this.ASYNC_BUF_SIZE);
 		this.bufferOffset = 0;
 		this.started = false;
-		this.gainReduction = 48;
-		this.LNAState = 2;
+		this.gainReduction = 58;
+		this.LNAState = 3;
 		this.gRdBsystem = 28;
 		this.DCenable = 0;
 		this.IQenable = 0;

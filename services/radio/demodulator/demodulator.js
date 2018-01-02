@@ -2,6 +2,7 @@ class Demodulator {
 	constructor() {
 		this.dc_avg = 0;
 		this.prev_index = 0;
+		this.prev_pcm = 0;
 		this.now_r = 0;
 		this.now_j = 0;
 		this.result = new Float32Array();		
@@ -24,6 +25,20 @@ class Demodulator {
 		return pcm;
 	}
 
+	dc_block_filter2(pcm) {
+		let R = 0.155;
+		// Remove dc
+		for (let i=0; i < pcm.length; i++) {
+			if (i == 0) {
+				pcm[i] = pcm[i] - this.dc_avg + R * this.dc_avg;
+			} else {
+				pcm[i] = pcm[i] - pcm[i - 1] + R * this.dc_avg;
+			}
+			this.dc_avg = pcm[i];
+		}
+		return pcm;
+	}
+
 	decimate(dataarr, factor) {
 		let d = 0;
 		let d2 = 0;
@@ -38,7 +53,7 @@ class Demodulator {
 			this.prev_index = 0;
 			this.now_r = 0;
 			this.now_j = 0;
-			d2+=2;
+			d2 += 2;
 		}
 		// Cut to new length
 		return dataarr.subarray(0, d2);

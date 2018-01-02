@@ -2,17 +2,17 @@ import * as types from '../mutation-types'
 import Websocket from '../../service/websocket-cli'
 
 const state = {
-  frequency: 124075000,
-  bandwidth: 15000,
-  centerFrequency: 124075000,
-  sampleRate: 1536000,
-  stepFrequency: 50000,
+  frequency: 106100000,
+  bandwidth: 170000,
+  centerFrequency: 105000000,
+  sampleRate: 3072000,
+  stepFrequency: 1000,
   audiorate: 24000,
   connected: false,
   opened: false,
   tunerGain: 241,
   capabilities: [],
-  modulation: 'AM'
+  modulation: 'WFM'
 }
 
 const getters = {
