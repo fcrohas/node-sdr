@@ -2,15 +2,15 @@ import * as types from '../mutation-types'
 import Websocket from '../../service/websocket-cli'
 
 const state = {
-  frequency: 106100000,
+  frequency: 107700000,
   bandwidth: 170000,
-  centerFrequency: 105000000,
-  sampleRate: 3072000,
-  stepFrequency: 1000,
-  audiorate: 24000,
+  centerFrequency: 107500000,
+  sampleRate: 1536000,
+  stepFrequency: 50000,
+  audiorate: 16000,
   connected: false,
   opened: false,
-  tunerGain: 241,
+  tunerGain: 51,
   capabilities: [],
   modulation: 'WFM'
 }
@@ -83,19 +83,19 @@ const actions = {
     Websocket.emit('config', [{ type: 'modulation', value: modulationType }], () => {
       switch (modulationType) {
         case 'WFM' :
-          commit(types.AUDIORATE_CHANGE, 24000)
+          commit(types.AUDIORATE_CHANGE, 16000)
           break
         case 'FM' :
-          commit(types.AUDIORATE_CHANGE, 24000)
+          commit(types.AUDIORATE_CHANGE, 16000)
           break
         case 'AM' :
-          commit(types.AUDIORATE_CHANGE, 24000)
+          commit(types.AUDIORATE_CHANGE, 16000)
           break
         case 'LSB' :
-          commit(types.AUDIORATE_CHANGE, 24000)
+          commit(types.AUDIORATE_CHANGE, 16000)
           break
         case 'USB' :
-          commit(types.AUDIORATE_CHANGE, 24000)
+          commit(types.AUDIORATE_CHANGE, 16000)
           break
       }
       // validate modulation change

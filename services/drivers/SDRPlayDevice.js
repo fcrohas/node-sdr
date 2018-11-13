@@ -7,8 +7,8 @@ class SDRPlayDevice extends Device {
 		this.driver = driver;
 		this.device = sdrplaydevice;
 		this.streamCallback = null;
-		this.ASYNC_BUF_SIZE = 8 * 2000;
-		this.ASYNC_BUF_NUMBER = 24;
+		this.ASYNC_BUF_SIZE = 8 * 8192;
+		this.ASYNC_BUF_NUMBER = 15;
 		this.bufferData = new Int16Array(this.ASYNC_BUF_NUMBER * this.ASYNC_BUF_SIZE);
 		this.bufferOffset = 0;
 		this.started = false;
@@ -102,8 +102,8 @@ class SDRPlayDevice extends Device {
 				(gRdB, lnagRdB) => {
 					console.log("gRdb="+gRdB+" lnagRdB="+lnagRdB);
 				}, 
-				32*16384, // Buffer size
-				16 ); // Buffer count
+				16*16384, // Buffer size
+				15 ); // Buffer count
 	}
 
 	stop() {

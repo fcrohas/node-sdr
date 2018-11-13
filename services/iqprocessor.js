@@ -14,7 +14,7 @@ class IQProcessor {
 		this.demodulator = null;
 		this.size = size;
 		this.sampleRate = 2048000;
-		this.audiorate = 24000
+		this.audiorate = 16000
 		this.bandwidth = 150000;
 		this.intermediate = 256000;
 		this.fftr = new KissFFT.FFT(size);
@@ -106,21 +106,21 @@ class IQProcessor {
 				this.intermediate = 384000;
 				this.audioLowPassFrequency = 500;			
 				this.rebuildFilters();	
-				this.updateAudiorate(24000); // 24 khz for WFM
+				this.updateAudiorate(16000); // 24 khz for WFM
 				break;
 			case 'FM' : 
 				this.demodulator = new FMDemod(0, {dcblock: false, deemph: true}); 
 				this.intermediate = 48000;
 				this.audioLowPassFrequency = 1500;				
 				this.rebuildFilters();
-				this.updateAudiorate(24000); // 24 khz for FM
+				this.updateAudiorate(16000); // 24 khz for FM
 				break;
 			case 'AM' : 
 				this.demodulator = new AMDemod(0);
 				this.intermediate = 48000;
 				this.audioLowPassFrequency = 350;				
 				this.rebuildFilters();
-				this.updateAudiorate(24000); // 24 khz for AM
+				this.updateAudiorate(16000); // 24 khz for AM
 				break;
 			case 'USB' : 
 				this.demodulator = new SSBDemod('USB'); 		// const taps = this.audiofilter.computeTapsLength( 30, this.audioLowPassFrequency, this.audioLowPassFrequency - 1450);
@@ -132,14 +132,14 @@ class IQProcessor {
 
 				this.intermediate = 48000;
 				this.audioLowPassFrequency = 1500;
-				this.updateAudiorate(24000); // 8 khz for SSB
+				this.updateAudiorate(16000); // 8 khz for SSB
 				break;
 			case 'LSB' : 
 				this.demodulator = new SSBDemod('LSB'); 
 				this.intermediate = 48000;
 				this.audioLowPassFrequency = 1500;				
 				this.rebuildFilters();
-				this.updateAudiorate(24000); // 8 khz for SSB
+				this.updateAudiorate(16000); // 8 khz for SSB
 				break;
 		}
 		this.updateDemodulate = false;
@@ -247,13 +247,13 @@ class IQProcessor {
 		// Decimate
 		const decimatedArr = this.demodulator.decimate(xlating, this.decimationFactor);
 		// low pass filter decimated array with user bandwidth
-		const lpfiltered = this.lpfir.doFilterIQ(decimatedArr);
+		//const lpfiltered = this.lpfir.doFilterIQ(decimatedArr);
 		// demodulate audio
-		const demodulated = this.demodulator.demodulate(lpfiltered);
+		const demodulated = this.demodulator.demodulate(decimatedArr);
 		// do resample to audio samplerate
 		const resampled = this.doResample(demodulated);
 		// band pass audio
-		return this.audiofilter.doFilterReal(resampled);
+		return resampled; //this.audiofilter.doFilterReal(resampled);
 	}
 
 	doFFT(floatarr) {

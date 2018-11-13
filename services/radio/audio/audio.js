@@ -6,13 +6,13 @@ const fs = require('fs');
 class Audio {
 
 	constructor() {
-		this.audiorate = 24000;
+		this.audiorate = 16000;
 		this.encoder = new Encoder({rate:this.audiorate, channels: 1, unsafe: true});
 		this.decoder = new Decoder({rate:this.audiorate, channels: 1});
 		// 10 ms frame_size
-		this.frame_size = this.audiorate / 100; 
-		// 5s buffer ? 
-		this.buffer = new Float32Array(this.audiorate * 2);
+		this.frame_size = this.audiorate / 200; 
+		// 8s buffer ? 
+		this.buffer = new Float32Array(this.audiorate * 1);
 		this.bufferOffset = 0;
 		// Callabck events
 		this.callback = [];
@@ -30,9 +30,9 @@ class Audio {
 		this.audiorate = value;
 		this.encoder = new Encoder({rate:this.audiorate, channels: 1, unsafe: true});		
 		// 10 ms frame_size
-		this.frame_size = value / 100; 
-		// 5s buffer ? 
-		this.buffer = new Float32Array(value * 2);
+		this.frame_size = value / 200; 
+		// 8s buffer ? 
+		this.buffer = new Float32Array(value * 1);
 		this.bufferOffset = 0;
 		this.update = false;
 	}
@@ -41,7 +41,7 @@ class Audio {
 		if (this.update) {
 			return null;
 		}
-		if (this.bufferOffset + pcm.length <= this.buffer.length) {
+		if (this.bufferOffset + pcm.length < this.buffer.length) {
 			this.buffer.set(pcm, this.bufferOffset);
 			this.bufferOffset += pcm.length;
 		} else {
@@ -52,14 +52,15 @@ class Audio {
 				this.bufferOffset += pcm.length;
 			}
 			// Compress 1s frame per frame size then send
-			//console.time('audioComplete');
+			console.time('audioComplete');
 			for (let i = 0; i < this.buffer.length; i += this.frame_size) {
 				const compressed = this.encoder.encode(this.buffer.subarray(i, i + this.frame_size));
 				if (this.callback['complete'] != null) {
 					this.callback['complete'](compressed);
 				}
 			}
-			//console.timeEnd('audioComplete');			
+			console.timeEnd('audioComplete');			
+			console.log('registered at ', new Date());
 			// this.save('./data/test.wav');
 			// save remaining data
 			if (this.bufferOffset > this.buffer.length) {

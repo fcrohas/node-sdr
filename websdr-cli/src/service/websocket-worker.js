@@ -2,22 +2,27 @@ import websocket from './websocket'
 import Adpcm from './codecs/adpcm'
 import opus from 'libopus.js'
 
-let ringbuffer = new Float32Array(24000 * 5)
+let ringbuffer = new Float32Array(16000 * 40)
 let ringwriteoffset = 0
 let ringreadoffset = 0
 let ringavailable = 0
 let isPlaying = false
-let playBufferSize = 24000
+let playBufferSize = 16000
+let startRead = false
 
 function getPlayDirectBuffer () {
   const output = new Float32Array(playBufferSize)
-  if (ringreadoffset + playBufferSize > ringbuffer.length) {
-    output.set(ringbuffer.subarray(ringreadoffset, ringbuffer.length - ringreadoffset))
-    output.set(ringbuffer.subarray(0, playBufferSize - ringbuffer.length - ringreadoffset), ringbuffer.length - ringreadoffset)
-    ringreadoffset = playBufferSize - (ringbuffer.length - ringreadoffset)
+  if (ringreadoffset + playBufferSize >= ringbuffer.length) {
+    let remainToTheEnd = ringbuffer.length - ringreadoffset
+    // read to the end
+    output.set(ringbuffer.subarray(ringreadoffset))
+    // Read remaining from start of buffer play buffer size minus already read octets
+    ringreadoffset = playBufferSize - remainToTheEnd 
+    output.set(ringbuffer.subarray(0, ringreadoffset), remainToTheEnd)
   } else {
     output.set(ringbuffer.subarray(ringreadoffset, ringreadoffset + playBufferSize))
     ringreadoffset += playBufferSize
+    // SHOULD NOT HAPPEN
     if (ringreadoffset >= ringbuffer.length) {
         ringreadoffset -= ringbuffer.length
     }
@@ -75,7 +80,7 @@ addEventListener('message', (event) => {
         break;
       case 'onAudioFrame':
         // Prepare Opus decompress
-        ringbuffer = new Float32Array(data.params.sampleRate * 4)
+        ringbuffer = new Float32Array(data.params.sampleRate * 40)
         ringwriteoffset = 0
         ringreadoffset = 0
         ringavailable = 0
@@ -89,25 +94,34 @@ addEventListener('message', (event) => {
           // Decode frames
           const pcm = decoder.decodeFloat32(Buffer.from(data))
           // if ring buffer is full soon
-          if (ringwriteoffset + pcm.length > ringbuffer.length) {
+          if (ringwriteoffset + pcm.length >= ringbuffer.length) {
             // fill end with remaining data
-            ringbuffer.set(pcm.subarray(0, ringbuffer.length - ringwriteoffset), ringwriteoffset)
+            let remainToTheEnd = ringbuffer.length - ringwriteoffset
+            ringbuffer.set(pcm.subarray(0, remainToTheEnd), ringwriteoffset)
             // then fill remaining to buffer start
-            const remaining = pcm.length - (ringbuffer.length - ringwriteoffset)
-            ringbuffer.set(pcm.subarray(ringbuffer.length - ringwriteoffset), 0)
-            ringwriteoffset = remaining
+            ringbuffer.set(pcm.subarray(remainToTheEnd), 0)
+            ringwriteoffset = pcm.length - remainToTheEnd
           } else {
             // add to ring buffer end
             ringbuffer.set(pcm, ringwriteoffset)
             ringwriteoffset += pcm.length
+            // SHOULD NOT HAPPEN
             if (ringwriteoffset >= ringbuffer.length) {
                 ringwriteoffset -= ringbuffer.length
             }
           }
           ringavailable += pcm.length
           // send when when engouth data available
-          if (ringavailable >= playBufferSize) {
+          if ((ringavailable >= playBufferSize * 8) && (!startRead)) {
+            // console.log('Initial ringavailable at ', ringavailable,' ringreadoffset at ' , ringreadoffset, ' ringwriteoffset', ringwriteoffset)
             postMessage({cmd: 'onAudioFrame', name: 'onAudioFrame', ack: callback, message: getPlayDirectBuffer()})
+            startRead = true
+          } else {
+            if ((ringavailable >= playBufferSize) && (startRead)) {
+              // console.log('ringavailable at ', ringavailable,' ringreadoffset at ' , ringreadoffset, ' ringwriteoffset', ringwriteoffset)
+              postMessage({cmd: 'onAudioFrame', name: 'onAudioFrame', ack: callback, message: getPlayDirectBuffer()})
+              ringavailable = 0
+            }
           }
         })      
         break;

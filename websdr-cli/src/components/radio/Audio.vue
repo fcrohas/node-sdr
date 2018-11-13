@@ -5,7 +5,7 @@
         <div ref="parent" class="full-size">
           <canvas ref="audioSpectrum" class="audioSpectrum"></canvas>
           <v-progress-circular
-              v-bind:size="70"
+              v-bind:size="80"
               v-bind:width="15"
               v-bind:rotate="360"
               v-bind:value="getAvailableBufferSize"
@@ -34,8 +34,8 @@ export default {
   components: { vueSlider },
   data () {
     return {
-      playBufferSize: 24000,
-      sourceSampleRate: 24000,
+      playBufferSize: 16000,
+      sourceSampleRate: 16000,
       context: null,
       gainNode: null,
       isPlaying: false,
@@ -54,7 +54,11 @@ export default {
       audiorate: 'audiorate'
     }),
     getAvailableBufferSize () {
-      return Math.round(this.pcmData.length * 100 / 6)
+      if (this.context) {
+        return Math.round(this.time - this.context.currentTime)
+      } else {
+        return 0
+      }
     },
     getBufferStatus () {
       if (this.ringavailable < this.playBufferSize) {
@@ -83,8 +87,13 @@ export default {
           const nextSource = this.createPlayBuffer(this.pcmData.shift())
           nextSource.start(this.time)
           this.time += nextSource.buffer.duration
+          console.log('Previous buffer read prepare futur buffer ', this.time)
         } else {
-          this.isPlaying = false
+          if (this.context.currentTime >= this.time - 0.8) {
+            this.isPlaying = false
+            console.log('Stop playing')
+          }
+          console.log('No more data to play current time=', this.context.currentTime, ' time=', this.time)
         }
       }
       // Gain
@@ -131,25 +140,7 @@ export default {
       // disconnect previous
       Websocket.offAudioFrame()
       // wait for websocket pcm data
-      Websocket.onAudioFrame(value, 1, (pcm) => {
-        // Add decoded pcm to list
-        this.pcmData.push(pcm)
-        // 8 s buffering
-        if ((this.pcmData.length > 10) && (!this.isPlaying)) {
-          const source = this.createPlayBuffer(this.pcmData.shift())
-          this.time = this.context.currentTime + 1
-          source.start(this.time)
-          this.time += source.buffer.duration
-          let i = 0
-          while (i < 5) {
-            const source = this.createPlayBuffer(this.pcmData.shift())
-            source.start(this.time)
-            this.time += source.buffer.duration
-            i++
-          }
-          this.isPlaying = true
-        }
-      })
+      this.isConnected(false)
     },
     isConnected (value) {
       if (!value) {
@@ -162,16 +153,21 @@ export default {
         // Add decoded pcm to list
         this.pcmData.push(pcm)
         // 8 s buffering
-        if ((this.pcmData.length > 5) && (!this.isPlaying)) {
+        if ((this.pcmData.length > 4) && (!this.isPlaying)) {
           const source = this.createPlayBuffer(this.pcmData.shift())
+          // Start playing in 5s
           this.time = this.context.currentTime + 1
           source.start(this.time)
+          // Next buffer should be at buffer duration +
           this.time += source.buffer.duration
+          console.log('Initial time + buffer ', this.time)
           let i = 0
-          while (i < 4) {
+          while (i < 3) {
+            // Add it
             const source = this.createPlayBuffer(this.pcmData.shift())
             source.start(this.time)
             this.time += source.buffer.duration
+            console.log('Next buffer ', this.time)
             i++
           }
           this.isPlaying = true
