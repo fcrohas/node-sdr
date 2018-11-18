@@ -1,8 +1,8 @@
 const Demodulator = require('./demodulator');
 
 class SSBDemod extends Demodulator  {
-	constructor(mode) {
-		super();
+	constructor(mode, opts) {
+		super(opts.samplerate);
 		this.mode = 0; // USB;
 		switch(mode) {
 			case 'USB': this.mode = 0; break;

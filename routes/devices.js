@@ -98,7 +98,7 @@ router.get('/open/:serialNumber', function(req, res, next) {
 						}
 						// Demodulate signal
 						if (iqprocessor.canDemodulate()) {
-							var pcmOut = iqprocessor.doDemodulate(floatarr);
+							var pcmOut = iqprocessor.doDemodulateOneLoop(floatarr);
 							if (pcmOut != null) {
 								socketRouter.audio.encode(pcmOut);
 							}

@@ -13,10 +13,11 @@ class IQProcessor {
 		this.updateFFT = false;
 		this.demodulator = null;
 		this.size = size;
-		this.sampleRate = 2048000;
+		this.sampleRate = 384000;
 		this.audiorate = 16000
-		this.bandwidth = 150000;
-		this.intermediate = 256000;
+		this.bandwidth = 15000;
+		this.intermediate = 96000;
+		this.pcmdata = new Float32Array(16000);
 		this.fftr = new KissFFT.FFT(size);
 		this.order = 17;
 		this.fftwindow = new Window(size);
@@ -29,21 +30,30 @@ class IQProcessor {
 		this.updateAudiorate(this.audiorate);
 		this.now_lpr = 0;
 		this.prev_lpr_index = 0;
-		this.fftResult = new Float32Array(this.size);		
+		this.modulation = 'WFM';
+		this.fftResult = new Float32Array(this.size);	
+		// Add one loop
+		this.prev_index = 0;
+		this.prev_pcm = 0;
+		this.now_r = 0;
+		this.now_j = 0;
+		this.fast_rate = this.sampleRate / this.decimationFactor;
+		this.slow_rate = this.audiorate;
 	}
 
 	updateAudiorate(audiorate) {
 		this.audiorate = audiorate;
-		this.audiofilter = new FIR(this.audiorate);
+		this.audiofilter = new IIR(this.audiorate);
 		// this.audiofilter.highpass();
 		// compute filter taps length for 60 Db attenuation for fstop = audiorate + 3000Khz limit and fpass = adio pass
-		const taps = this.audiofilter.computeTapsLength( 20, this.audioLowPassFrequency - 100, this.audioLowPassFrequency);
-		this.audiowindow = new Window(taps);
-		this.audiowindow.build(Window.hamming);
-		this.audiofilter.setWindow(this.audiowindow.get());
-		//this.audiofilter.buildLowpass( this.audioLowPassFrequency - 1000, taps);
-		this.audiofilter.buildHighpass( this.audioLowPassFrequency, taps);
-		// this.audiofilter.buildBandpass( 6500, 12000, 45);
+		//const taps = this.audiofilter.computeTapsLength( 30, this.audioLowPassFrequency + 1500, this.audioLowPassFrequency);
+		// this.audiowindow = new Window(taps);
+		// this.audiowindow.build(Window.hamming);
+		// this.audiofilter.setWindow(this.audiowindow.get());
+		//this.audiofilter.buildLowpass( this.audioLowPassFrequency + 1500, taps);
+		this.audiofilter.buildLowpass( 2, this.audioLowPassFrequency);
+		//this.audiofilter.buildHighpass( this.audioLowPassFrequency + 1000, taps);
+		//this.audiofilter.buildBandpass( 4500, 8000, 45);
 		console.log('IQ demodulator audio rate change to ' + this.audiorate);
 	}
 
@@ -99,45 +109,40 @@ class IQProcessor {
 	}
 
 	setModulation(modulation) {
+		this.modulation = modulation;
 		this.updateDemodulate = true;
 		switch(modulation) {
 			case 'WFM' : 
-				this.demodulator = new FMDemod(1, {dcblock: true, deemph: true}); 
+				this.demodulator = new FMDemod(1, {dcblock: true, deemph: true, samplerate: 384000}); 
 				this.intermediate = 384000;
-				this.audioLowPassFrequency = 500;			
+				this.audioLowPassFrequency = 7500;			
 				this.rebuildFilters();	
 				this.updateAudiorate(16000); // 24 khz for WFM
 				break;
 			case 'FM' : 
-				this.demodulator = new FMDemod(0, {dcblock: false, deemph: true}); 
+				this.demodulator = new FMDemod(1, {dcblock: false, deemph: false, samplerate: 48000}); 
 				this.intermediate = 48000;
-				this.audioLowPassFrequency = 1500;				
+				this.audioLowPassFrequency = 8000;				
 				this.rebuildFilters();
 				this.updateAudiorate(16000); // 24 khz for FM
 				break;
 			case 'AM' : 
-				this.demodulator = new AMDemod(0);
-				this.intermediate = 48000;
-				this.audioLowPassFrequency = 350;				
+				this.demodulator = new AMDemod(0,{samplerate: 64000});
+				this.intermediate = 64000;
+				this.audioLowPassFrequency = 8000;				
 				this.rebuildFilters();
 				this.updateAudiorate(16000); // 24 khz for AM
 				break;
 			case 'USB' : 
-				this.demodulator = new SSBDemod('USB'); 		// const taps = this.audiofilter.computeTapsLength( 30, this.audioLowPassFrequency, this.audioLowPassFrequency - 1450);
-		// this.audiowindow = new Window(taps);
-		// this.audiowindow.build(Window.hamming);
-		// this.audiofilter.setWindow(this.audiowindow.get());
-		// //this.audiofilter.buildLowpass( this.audioLowPassFrequency - 1000, taps);
-		// this.audiofilter.buildHighpass( this.audioLowPassFrequency, taps);
-
+				this.demodulator = new SSBDemod('USB',{samplerate: 48000}); 		
 				this.intermediate = 48000;
-				this.audioLowPassFrequency = 1500;
+				this.audioLowPassFrequency = 3000;
 				this.updateAudiorate(16000); // 8 khz for SSB
 				break;
 			case 'LSB' : 
-				this.demodulator = new SSBDemod('LSB'); 
-				this.intermediate = 48000;
-				this.audioLowPassFrequency = 1500;				
+				this.demodulator = new SSBDemod('LSB',{samplerate: 48000}); 
+				this.intermediate = 96000;
+				this.audioLowPassFrequency = 3000;				
 				this.rebuildFilters();
 				this.updateAudiorate(16000); // 8 khz for SSB
 				break;
@@ -177,14 +182,20 @@ class IQProcessor {
 	rebuildFilters() {
 		this.computeFrequencyXlat();		
 		this.computeDecimation();
+		console.log("samplerate",this.sampleRate,"decimationFactor",this.decimationFactor);
 		this.lpfir = new FIR(this.sampleRate / this.decimationFactor);
 		// compute filter taps length for 60 Db attenuation for fstop = bandwidth + 1/10eme limit and fpass = bandwidth
-		const taps = this.lpfir.computeTapsLength( 30, this.bandwidth + this.bandwidth/10, this.bandwidth); // 
-		this.window = new Window(taps);
-		this.window.build(Window.hamming);
+		const cutoff = this.bandwidth / 2;
+		 let taps = 41; //this.lpfir.computeTapsLength( 60, (cutoff) + cutoff/5, cutoff); // 
+		 this.window = new Window(taps);
+		 this.window.build(Window.hamming);
+		//taps = this.window.kaiser(80, this.bandwidth / 2, 2000, this.sampleRate / this.decimationFactor);
 		this.lpfir.setWindow(this.window.get());
-		this.lpfir.buildLowpass( this.bandwidth, taps);
-		console.log('Rebuild for bandwidth=' + this.bandwidth);
+		this.lpfir.buildLowpass( cutoff + cutoff/5, taps);
+		// this.lpfir.buildLowpass( 2, cutoff);
+		this.fast_rate = this.sampleRate / this.decimationFactor;
+		this.slow_rate = this.audiorate;
+		console.log('Rebuild for bandwidth=' + this.bandwidth, "fast rate=",this.fast_rate," slow rate=", this.slow_rate);
 	}
 
 	getAudiorate() {
@@ -225,8 +236,8 @@ class IQProcessor {
 			// Code from Google Radio
 			// better implementation that my previous
 			for (let i = 0; i < floatarr.length; i+=2) {
-				this.xlatArr[i] = floatarr[i] * this.xlat.cosine - floatarr[i + 1] * this.xlat.sine;
-				this.xlatArr[i + 1] = floatarr[i] * this.xlat.sine + floatarr[i + 1] * this.xlat.cosine;
+				this.xlatArr[i] = floatarr[i] * this.xlat.cosine + floatarr[i + 1] * this.xlat.sine;
+				this.xlatArr[i + 1] = floatarr[i] * this.xlat.sine - floatarr[i + 1] * this.xlat.cosine;
 				// compute new cos/sin
 				const newSine = this.xlat.cosine * this.xlat.deltaSine + this.xlat.sine * this.xlat.deltaCosine;
 				this.xlat.cosine = this.xlat.cosine * this.xlat.deltaCosine - this.xlat.sine * this.xlat.deltaSine;
@@ -238,22 +249,45 @@ class IQProcessor {
 		return this.xlatArr;
 	}
 
-	doDemodulate(floatarr) {
+	doDemodulateOneLoop(floatarr) {
 		if (this.updateDemodulate) {
 			return null;
 		}
 		// translate frequency
-		const xlating = this.xlatFrequency(floatarr);
-		// Decimate
-		const decimatedArr = this.demodulator.decimate(xlating, this.decimationFactor);
-		// low pass filter decimated array with user bandwidth
-		//const lpfiltered = this.lpfir.doFilterIQ(decimatedArr);
-		// demodulate audio
-		const demodulated = this.demodulator.demodulate(decimatedArr);
-		// do resample to audio samplerate
-		const resampled = this.doResample(demodulated);
-		// band pass audio
-		return resampled; //this.audiofilter.doFilterReal(resampled);
+		let i2 = 0;
+
+		for (let i = 0; i < floatarr.length; i+=2) {
+			let I = floatarr[i] * this.xlat.cosine - floatarr[i + 1] * this.xlat.sine;
+			let Q = floatarr[i] * this.xlat.sine + floatarr[i + 1] * this.xlat.cosine;
+			// Rotate cos / sin
+			const newSine = this.xlat.cosine * this.xlat.deltaSine + this.xlat.sine * this.xlat.deltaCosine;
+			this.xlat.cosine = this.xlat.cosine * this.xlat.deltaCosine - this.xlat.sine * this.xlat.deltaSine;
+			this.xlat.sine = newSine;
+			// decimate
+			this.now_r += I;
+			this.now_j += Q;
+			this.prev_index++;
+			if (this.prev_index < this.decimationFactor) continue;
+			let Id = this.now_r;
+			let Qd = this.now_j;
+			this.prev_index = 0;
+			this.now_r = 0;
+			this.now_j = 0;
+			// Lowpass after translated frequency
+			let filtered = this.lpfir.doFilterIQ(Id,Qd);
+			// Demodulate
+			this.now_lpr += this.demodulator.demodulateSingle(filtered[0],filtered[1]);
+			this.prev_lpr_index += this.slow_rate;
+			if (this.prev_lpr_index < this.fast_rate) {
+				continue;
+			}
+			let pcm = this.audiofilter.doFilterReal(this.now_lpr / (this.fast_rate/this.slow_rate));
+			this.pcmdata.set([pcm],i2);
+			this.prev_lpr_index -= this.fast_rate;
+			this.now_lpr = 0;
+			i2 += 1;
+		}
+		return this.pcmdata.subarray(0,i2);
 	}
 
 	doFFT(floatarr) {
@@ -304,31 +338,6 @@ class IQProcessor {
 				j++;
 			}
 		}
-		// Compute fft
-		// let min = 0;
-		// let max = -200;
-		// for (let a = 0; a < fftOut.length; a+=this.size * 2 * average) {
-		// 	// sum them
-		// 	for (let b = 0; b < this.size * 2 * average; b+=this.size * 2) {
-		// 		for (let c = 0; c < this.size * 2; c+=2) {
-		// 			result[c] += fftOut[a + b + c];
-		// 			result[c + 1] += fftOut[a + b + c + 1];
-		// 		}
-		// 	}
-		// 	// Compute fft
-		// 	for (let i= 0; i < this.size * 2; i += 2) {
-		// 		let I = result[i] / average;
-		// 		let Q = result[i + 1] / average;
-		// 		const magnitude = Math.sqrt(I * I + Q * Q);
-		// 		const log = 20 * Math.log10(magnitude);
-		// 		// switch result here
-		// 		fftmean[j] = log + 128;
-		// 		min = Math.min(log, min);
-		// 		max = Math.max(log, max);
-		// 		j++;
-		// 	}
-		// }
-		// console.log('max=',max,'min=',min);
 		return fftmean;
 	}
 }

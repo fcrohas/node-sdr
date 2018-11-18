@@ -13,11 +13,12 @@ class SDRPlayDevice extends Device {
 		this.bufferOffset = 0;
 		this.started = false;
 		this.gainReduction = 58;
-		this.LNAState = 3;
-		this.gRdBsystem = 28;
+		this.LNAState = 1;
+		this.gRdBsystem = 58;
 		this.DCenable = 0;
 		this.IQenable = 0;
 		this.AGCenable = 0;
+		this.decimate = 1;
 		this.GrMode = this.driver.SetGrModeT.mir_sdr_USE_RSP_SET_GR;
 	}
 
@@ -70,24 +71,24 @@ class SDRPlayDevice extends Device {
 
 	start() {
 		this.driver.DCoffsetIQimbalanceControl(1, 1);	
-		let decimate = 1;
+		this.decimate = 1;
 		if (this.sampleRate / 1000000 < 2.0) {
 			// Activate decimation
-			while (this.sampleRate * decimate / 1000000 < 2.0) decimate *= 2;
-			if (decimate > 32) decimate = 32;
+			while (this.sampleRate * this.decimate / 1000000 < 2.0) this.decimate *= 2;
+			if (this.decimate > 32) this.decimate = 32;
 			// activate decimation
-			console.log('Activate decimation '+decimate);
-			this.driver.DecimateControl(1, decimate, 0);
+			console.log('Activate decimation '+this.decimate);
+			this.driver.DecimateControl(1, this.decimate, 0);
 		} else {
 			this.driver.DecimateControl(0, 2, 0);
 		}
 
 		//this.driver.SetDcMode(5,0);
-		console.log('start streamInit for sampleRate ', this.sampleRate, 'with recalculated ', this.sampleRate * decimate);
+		console.log('start streamInit for sampleRate ', this.sampleRate, 'with recalculated ', this.sampleRate * this.decimate);
 		this.driver.StreamInit(this.gainReduction, 
-				this.sampleRate * decimate / 1000000, 
+				this.sampleRate * this.decimate / 1000000, 
 				this.centerFrequency / 1000000, 
-				this.driver.Bw_MHzT.mir_sdr_BW_1_536, 
+				this.driver.Bw_MHzT.mir_sdr_BW_5_000, 
 				this.driver.If_kHzT.mir_sdr_IF_Zero, 
 				this.LNAState, 
 				this.gRdBsystem, 
@@ -100,10 +101,15 @@ class SDRPlayDevice extends Device {
 					}
 				}, 
 				(gRdB, lnagRdB) => {
-					console.log("gRdb="+gRdB+" lnagRdB="+lnagRdB);
+					//console.log("gRdb="+gRdB+" lnagRdB="+lnagRdB);
 				}, 
 				16*16384, // Buffer size
 				15 ); // Buffer count
+		if (this.decimate>1) {
+			this.driver.DecimateControl(1, this.decimate, 0);
+		} else {
+			this.driver.DecimateControl(0, this.decimate, 0);
+		}
 	}
 
 	stop() {
@@ -195,20 +201,20 @@ class SDRPlayDevice extends Device {
 				// }
 				break;
 			case 'sampleRate':
-				let decimate = 1;
+				this.decimate = 1;
 				if (value / 1000000 < 2.0) {
 					// Activate decimation
-					while (value * decimate / 1000000 < 2.0) decimate *= 2;
-					if (decimate > 32) decimate = 32;
+					while (value * this.decimate / 1000000 < 2.0) this.decimate *= 2;
+					if (this.decimate > 32) this.decimate = 32;
 					// activate decimation
-					console.log('Activate decimation reinit '+decimate);
-					this.driver.DecimateControl(1, decimate, 0);
+					console.log('Activate decimation reinit '+this.decimate);
+					this.driver.DecimateControl(1, this.decimate, 0);
 				} else {
 					this.driver.DecimateControl(0, 2, 0);
 				}
 				// reinit only if value are   different
 				if (value != this.sampleRate) {
-					errorcode = this.driver.ReInit(0, value * decimate / 1000000, 0, 0, 0, 0, 0, 0, 0, 0, this.driver.ReasonForReinitT.mir_sdr_CHANGE_FS_FREQ);
+					errorcode = this.driver.ReInit(0, value * this.decimate / 1000000, 0, 0, 0, 0, 0, 0, 0, 0, this.driver.ReasonForReinitT.mir_sdr_CHANGE_FS_FREQ);
 				}
 				break;
 			case 'antenna':

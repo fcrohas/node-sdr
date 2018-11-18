@@ -32,12 +32,12 @@ class Window {
 	    return Window.baseWindow(i, N, 1.0, 0, 0, 0);
 	}
 
-	static factorial(n)
+	factorial(n)
 	{
 	  return (n == 1 || n == 0) ? 1 : this.factorial(n - 1) * n;
 	}
 
-	static bessel(x)
+	bessel(x)
 	{
 	    // Bessel zero order approx
 	    let i0 = 0.0;

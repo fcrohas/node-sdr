@@ -3,15 +3,17 @@ const Demodulator = require('./demodulator');
 class FMDemod extends Demodulator {
 
 	constructor(mode, opts) {
-		super();
+		super(opts.samplerate);
 		this.pre_r = 0;
 		this.pre_j = 0;
 		this.avg = 0;
+		this.prev_output = 0;
 		this.enableDeemphasis = opts.deemph;
 		this.enableDcblock = opts.dcblock;
+		this.samplerate = opts.samplerate;
 		this.discriminant = null;
 		//this.deemph_a = 1.0/((1.0-Math.exp(-1.0/(384000 * 50e-6))));
-		this.deemph_a = Math.exp(-2 * Math.PI * 384000 * 75e-6);
+		this.deemph_a = Math.exp(-2 * Math.PI * 64000 * 50e-6);
 		switch(mode) {
 			case 0 : this.discriminant = this.polar_disc_fast; break;
 			case 1 : this.discriminant = this.polar_discriminant; break;
@@ -119,6 +121,24 @@ class FMDemod extends Demodulator {
 		}
 
 		return this.result;
+	}
+
+	demodulateSingle(I,Q) {
+		// 
+		let output = this.discriminant(I, Q, this.pre_r, this.pre_j);
+		let R = 0.155;
+		this.pre_r = I;
+		this.pre_j = Q;
+
+		if (this.enableDcblock) {
+			output = output - this.prev_output + R * this.dc_avg;
+		}
+
+		if (this.enableDeemphasis) {
+			output = output + this.deemph_a * this.prev_output;
+		}
+		this.prev_output = output;		
+		return output;
 	}
 }
 

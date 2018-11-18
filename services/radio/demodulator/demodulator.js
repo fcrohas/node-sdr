@@ -1,11 +1,16 @@
 class Demodulator {
-	constructor() {
+	constructor(samplerate) {
 		this.dc_avg = 0;
 		this.prev_index = 0;
 		this.prev_pcm = 0;
 		this.now_r = 0;
 		this.now_j = 0;
-		this.result = new Float32Array();		
+		this.result = new Float32Array();	
+		this.peak_input = 0;
+		this.samplerate = samplerate;
+		this.rate = 0;
+		this.average = 0;
+		this.gain = 1.0;
 	}
 
 	dc_block_filter(pcm) {
@@ -64,6 +69,23 @@ class Demodulator {
 		if (this.result.length != buffer.length / 2) {
 			this.result = new Float32Array(buffer.length / 2);
 		}
+	}
+
+	automaticGainControl(pcm, level) {
+		// compute average
+		let mu = 0.01;
+		if (pcm>this.peak_input) {
+			this.peak_input = pcm;
+		}
+		let output = pcm * this.gain;
+		this.gain = this.gain - mu * (Math.pow(output,2) - level);
+
+		if (this.rate == this.samplerate) {
+			this.rate = 0;
+		} else {
+			this.rate++;
+		}
+		return output;
 	}
 }
 

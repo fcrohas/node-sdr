@@ -2,35 +2,51 @@ const Demodulator = require('./demodulator');
 
 class AMDemod extends Demodulator  {
 
-	constructor(mode) {
-		super();
+	constructor(mode,opts) {
+		super(opts.samplerate);
+		this.halfPoint = 0;
+		this.IAv = 0;
+		this.QAv = 0;
 	}
 
 	demodulate(buffer) {
 		super.demodulate(buffer);
 		// to work
 		let sigSum = 0;
-		// Average i ad Q
-		let iAvg = 0;
-		let qAvg = 0;
-		for (let i=0; i< buffer.length; i += 2) {
-			iAvg += buffer[i];
-			qAvg += buffer[i + 1];
+		var IAv = 0;
+		var QAv = 0;
+		for (let i = 0,j=0; i < buffer.length; i+=2) {
+		    IAv += buffer[i];
+		    QAv += buffer[i + 1];
 		}
-		iAvg = iAvg / buffer.length;
-		qAvg = qAvg / buffer.length;
-		for (let i = 0; i < buffer.length; i+=2) {
-			let iv = buffer[i] - iAvg;
-			let qv = buffer[i + 1] - qAvg;
+		IAv = IAv / (buffer.length /2);
+		QAv = QAv / (buffer.length /2);
+		// Average i ad Q
+		for (let i = 0,j=0; i < buffer.length; i+=2) {
+			let iv = buffer[i];// - IAv;
+			let qv = buffer[i + 1];// - QAv;
 			const amplitude = Math.sqrt( iv * iv + qv * qv);
-			this.result[i/2] = amplitude;
+			this.result[j] = amplitude;
 			sigSum += amplitude;
+			j++;
 		}
 	    const halfPoint = sigSum / this.result.length;
 	    for (let i = 0; i < this.result.length; ++i) {
-	      this.result[i] = (this.result[i] - halfPoint) / halfPoint;
+	     this.result[i] = (this.result[i] - halfPoint) / halfPoint * 0.05;
 	    }
-		return this.result; 
+	    return this.result;
+	}
+
+	demodulateSingle(I,Q) {
+		const In = I;// - this.IAv;
+		const Qn = Q;// - this.QAv;
+		let amplitude = Math.sqrt( In * In + Qn * Qn) * 0.0003;
+		this.halfPoint = (amplitude + this.halfPoint) / 2;
+		amplitude  = (amplitude - this.halfPoint) / this.halfPoint;
+		this.IAv = (I + this.IAv) / 2;
+		this.QAv = (Q + this.QAv) / 2;
+		return super.automaticGainControl(amplitude,0.0003);
+
 	}
 
 }

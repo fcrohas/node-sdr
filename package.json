@@ -14,6 +14,7 @@
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.3",
     "express": "~4.15.2",
+    "fili": "^2.0.1",
     "jade": "~1.11.0",
     "kissfft-js": "^0.1.4",
     "libopus.js": "0.0.1",

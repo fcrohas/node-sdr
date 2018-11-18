@@ -5,7 +5,7 @@ const fs = require('fs');
 
 class Audio {
 
-	constructor() {
+	constructor(audiorate) {
 		this.audiorate = 16000;
 		this.encoder = new Encoder({rate:this.audiorate, channels: 1, unsafe: true});
 		this.decoder = new Decoder({rate:this.audiorate, channels: 1});
@@ -52,14 +52,14 @@ class Audio {
 				this.bufferOffset += pcm.length;
 			}
 			// Compress 1s frame per frame size then send
-			console.time('audioComplete');
+			// console.time('audioComplete');
 			for (let i = 0; i < this.buffer.length; i += this.frame_size) {
 				const compressed = this.encoder.encode(this.buffer.subarray(i, i + this.frame_size));
 				if (this.callback['complete'] != null) {
 					this.callback['complete'](compressed);
 				}
 			}
-			console.timeEnd('audioComplete');			
+			// console.timeEnd('audioComplete');			
 			console.log('registered at ', new Date());
 			// this.save('./data/test.wav');
 			// save remaining data
